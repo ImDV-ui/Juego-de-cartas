@@ -5,6 +5,7 @@ export class PhysicsController {
         this.world = new CANNON.World();
         this.world.gravity.set(0, -9.82, 0);
         this.world.broadphase = new CANNON.SAPBroadphase(this.world);
+        this.world.allowSleep = true; // Allow bodies to sleep
         this.world.solver.iterations = 10;
 
         this.materials = {
@@ -28,52 +29,44 @@ export class PhysicsController {
     }
 
     initCabinet() {
-        // --- Main Floor ---
-        const floorShape = new CANNON.Box(new CANNON.Vec3(5, 0.5, 5)); 
+        // --- SUELO (Más adelantado para atrapar las monedas que caen) ---
+        const floorShape = new CANNON.Box(new CANNON.Vec3(5, 0.5, 5)); // Profundidad 10
         const floorBody = new CANNON.Body({ mass: 0, material: this.materials.ground });
         floorBody.addShape(floorShape);
-        floorBody.position.set(0, -0.5, 0);
+        floorBody.position.set(0, -0.5, 2); // Movido hacia adelante
         this.world.addBody(floorBody);
 
-        // --- Walls ---
-        const wallShape = new CANNON.Box(new CANNON.Vec3(0.5, 2, 6));
-
+        // --- PAREDES ---
+        const wallShape = new CANNON.Box(new CANNON.Vec3(0.5, 2, 6)); // Profundidad 12
         const leftWall = new CANNON.Body({ mass: 0, material: this.materials.ground });
         leftWall.addShape(wallShape);
-        leftWall.position.set(-5.5, 2, 0);
+        leftWall.position.set(-5.5, 2, 1);
         this.world.addBody(leftWall);
 
         const rightWall = new CANNON.Body({ mass: 0, material: this.materials.ground });
         rightWall.addShape(wallShape);
-        rightWall.position.set(5.5, 2, 0);
+        rightWall.position.set(5.5, 2, 1);
         this.world.addBody(rightWall);
 
-        const backWallShape = new CANNON.Box(new CANNON.Vec3(6, 4, 0.5));
-        const backWall = new CANNON.Body({ mass: 0, material: this.materials.ground });
-        backWall.addShape(backWallShape);
-        backWall.position.set(0, 2, -6.5); 
-        this.world.addBody(backWall);
-
-        // --- Pusher (Extendido para que nunca haya hueco atrás) ---
-        // Incrementamos la profundidad de 2 a 6 (CANNON usa half-extents, así que mide 12 de largo)
-        const pusherShape = new CANNON.Box(new CANNON.Vec3(5, 0.5, 6)); 
+        // --- PUSHER (Barrera empujadora) ---
+        const pusherShape = new CANNON.Box(new CANNON.Vec3(5, 0.5, 5)); // Profundidad 10
         this.pusherBody = new CANNON.Body({
-            mass: 0, 
+            mass: 0,
             type: CANNON.Body.KINEMATIC,
             material: this.materials.pusher
         });
         this.pusherBody.addShape(pusherShape);
-        this.pusherBody.position.set(0, 0.45, -3); // Ligeramente hundido
+        this.pusherBody.position.set(0, 0.45, -4); // Base de inicio
         this.world.addBody(this.pusherBody);
 
-        // --- Sweeper (El bloque superior que barre las monedas) ---
-        // Este bloque es estático, se sitúa justo por encima de la barrera.
+        // --- SWEEPER (Techo que raspa las monedas) ---
         const sweeperShape = new CANNON.Box(new CANNON.Vec3(5, 1, 4)); // Profundidad 8
         const sweeperBody = new CANNON.Body({ mass: 0, material: this.materials.ground });
         sweeperBody.addShape(sweeperShape);
-        // Colocado en Y=2. Su base queda en Y=1.0. La barrera está en Y=0.95.
-        // Así queda un hueco minúsculo de 0.05. Las monedas miden 0.15, por lo que chocarán y caerán.
-        sweeperBody.position.set(0, 2, -2); 
+        // Su borde delantero llega hasta Z = -0.5. 
+        // Cuando el pusher retrocede al máximo, su borde delantero queda en Z = -1.0.
+        // ¡Esto garantiza que el techo barre el 100% de la superficie expuesta!
+        sweeperBody.position.set(0, 2, -4.5);
         this.world.addBody(sweeperBody);
     }
 
@@ -82,13 +75,15 @@ export class PhysicsController {
     }
 
     createCoin(radius, position) {
-        // Grosor ajustado a 0.15
         const shape = new CANNON.Cylinder(radius, radius, 0.15, 12);
         const body = new CANNON.Body({
-            mass: 1, 
+            mass: 1,
             material: this.materials.coin,
-            linearDamping: 0.5, 
-            angularDamping: 0.5
+            linearDamping: 0.5,
+            angularDamping: 0.5,
+            allowSleep: true,
+            sleepSpeedLimit: 0.1, // Body will fall asleep if speed < 0.1
+            sleepTimeLimit: 0.5   // Body must be slow for 0.5s to sleep
         });
 
         const q = new CANNON.Quaternion();

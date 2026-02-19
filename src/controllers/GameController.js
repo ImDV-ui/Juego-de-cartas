@@ -12,24 +12,18 @@ export class GameController {
         this.data = new GameData();
 
         this.coinController = new CoinController(this.physics, this.view);
-        this.cardController = new CardController();
+        this.cardController = new CardController(this); // Pass self for callbacks
         this.inputController = new InputController();
 
         this.pusherTime = 0;
 
-        // --- SISTEMA DE CLIC PARA SOLTAR MONEDAS ---
-        // --- SISTEMA DE CLIC PARA SOLTAR MONEDAS ---
         this.inputController.onDrop((normalizedX) => {
-            // Check if user has money
             if (this.view.ui.money > 0) {
-                // Deduct cost
                 this.view.ui.updateMoney(-1);
-
-                // La mesa mide 10 de ancho (de -5 a 5). 
                 const dropX = normalizedX * 4.5;
-
-                // Soltamos la moneda
-                this.coinController.spawnCoin(dropX, 4, 2.5);
+                // CAÍDA EN Z = 1.5: Esto asegura que caen justo delante del techo oscuro,
+                // directamente sobre la plataforma móvil plateada.
+                this.coinController.spawnCoin(dropX, 4, 1.5);
             }
         });
     }
@@ -37,9 +31,9 @@ export class GameController {
     update(deltaTime) {
         this.physics.update(deltaTime);
 
-        // Movimiento de la barrera (Oscila entre Z = -4.5 y Z = -1.5)
+        // Movimiento de la barrera: Oscila entre Z = -6 (muy atrás) y Z = -2 (adelante)
         this.pusherTime += deltaTime * 1.5;
-        const pusherZ = -3 + Math.sin(this.pusherTime) * 1.5;
+        const pusherZ = -4 + Math.sin(this.pusherTime) * 2;
 
         this.physics.setPusherPosition(pusherZ);
         this.view.updatePusherPosition(pusherZ);

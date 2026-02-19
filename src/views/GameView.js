@@ -7,11 +7,12 @@ export class GameView {
         this.ui = new UIView();
 
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color('#5c94fc'); 
+        // --- CAMBIO DE FONDO: Cielo Azul Mario ---
+        this.scene.background = new THREE.Color('#5c94fc');
 
         this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-        this.camera.position.set(0, 18, 15); 
-        this.camera.lookAt(0, -2, -5);
+        this.camera.position.set(0, 15, 13);
+        this.camera.lookAt(0, -1, 0);
 
         this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -23,15 +24,15 @@ export class GameView {
         this.coinMeshes = [];
         this.pusherMesh = null;
 
-        // Grosor de 0.15
-        this.coinGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.15, 32);
+        this.coinGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.15, 12); // Reduced segments for performance
         this.coinGeometry.rotateX(-Math.PI / 2);
 
+        // --- MATERIAL MONEDA: Oro más "cartoon" y brillante ---
         this.coinMaterial = new THREE.MeshStandardMaterial({
-            color: 0xfce000, 
-            metalness: 0.3,  
-            roughness: 0.2,
-            emissive: 0x333300 
+            color: 0xffd700, // Oro vibrante
+            metalness: 0.4,  // Menos metálico realista, más plástico brillante
+            roughness: 0.3,
+            emissive: 0x443300 // Un toque de luz propia
         });
 
         this.setupLights();
@@ -41,60 +42,69 @@ export class GameView {
     }
 
     setupLights() {
+        // Luz ambiente más fuerte para un look "cartoon" brillante
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
         this.scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-        directionalLight.position.set(5, 15, 5);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.1);
+        directionalLight.position.set(3, 15, 8);
         directionalLight.castShadow = true;
         directionalLight.shadow.mapSize.width = 2048;
         directionalLight.shadow.mapSize.height = 2048;
+        // Suavizamos un poco las sombras
+        directionalLight.shadow.radius = 2;
         this.scene.add(directionalLight);
     }
 
     createCabinet() {
-        const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xc84c0c, roughness: 0.8 }); 
-        const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x00a800, roughness: 0.5 });  
-        const pusherMaterial = new THREE.MeshStandardMaterial({ color: 0xfc9838, roughness: 0.4 });
-        const backMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.9 });  
+        // --- PALETA ESTILO MARIO BROS ---
+        // Suelo: Color ladrillo marrón
+        const floorMaterial = new THREE.MeshStandardMaterial({
+            color: 0xc84c0c, roughness: 0.8, metalness: 0.1
+        });
+        // Paredes laterales: Verde tubería
+        const wallMaterial = new THREE.MeshStandardMaterial({
+            color: 0x00a800, roughness: 0.5, metalness: 0.2
+        });
+        // Barrera (Pusher): Amarillo/Naranja "Bloque Interrogación"
+        const pusherMaterial = new THREE.MeshStandardMaterial({
+            color: 0xfc9838, roughness: 0.4, metalness: 0.3, emissive: 0x221100
+        });
+        // Techo (Sweeper): Marrón oscuro bloque sólido
+        const sweeperMaterial = new THREE.MeshStandardMaterial({
+            color: 0x6b2d08, roughness: 0.9
+        });
 
+        // --- GEOMETRÍA (Se mantiene idéntica para encajar con las físicas) ---
         const floorGeo = new THREE.BoxGeometry(10, 1, 10);
         const floor = new THREE.Mesh(floorGeo, floorMaterial);
-        floor.position.set(0, -0.5, 0); 
+        floor.position.set(0, -0.5, 2);
         floor.receiveShadow = true;
         this.scene.add(floor);
 
         const wallGeo = new THREE.BoxGeometry(1, 4, 12);
         const leftWall = new THREE.Mesh(wallGeo, wallMaterial);
-        leftWall.position.set(-5.5, 2, 0);
+        leftWall.position.set(-5.5, 2, 1);
         leftWall.castShadow = true;
         leftWall.receiveShadow = true;
         this.scene.add(leftWall);
 
         const rightWall = new THREE.Mesh(wallGeo, wallMaterial);
-        rightWall.position.set(5.5, 2, 0);
+        rightWall.position.set(5.5, 2, 1);
         rightWall.castShadow = true;
         rightWall.receiveShadow = true;
         this.scene.add(rightWall);
 
-        const backWallGeo = new THREE.BoxGeometry(12, 8, 1);
-        const backWall = new THREE.Mesh(backWallGeo, backMaterial);
-        backWall.position.set(0, 2, -6.5);
-        backWall.receiveShadow = true;
-        this.scene.add(backWall);
-
-        // Pusher ahora mide 12 de profundidad
-        const pusherGeo = new THREE.BoxGeometry(10, 1, 12);
+        const pusherGeo = new THREE.BoxGeometry(10, 1, 10);
         this.pusherMesh = new THREE.Mesh(pusherGeo, pusherMaterial);
-        this.pusherMesh.position.set(0, 0.45, -3);
+        this.pusherMesh.position.set(0, 0.45, -4);
         this.pusherMesh.castShadow = true;
         this.pusherMesh.receiveShadow = true;
         this.scene.add(this.pusherMesh);
 
-        // Nuevo bloque "Sweeper" (Actúa como techo oscuro atrás)
         const sweeperGeo = new THREE.BoxGeometry(10, 2, 8);
-        const sweeperMesh = new THREE.Mesh(sweeperGeo, backMaterial);
-        sweeperMesh.position.set(0, 2, -2);
+        const sweeperMesh = new THREE.Mesh(sweeperGeo, sweeperMaterial);
+        sweeperMesh.position.set(0, 2, -4.5);
         sweeperMesh.castShadow = true;
         sweeperMesh.receiveShadow = true;
         this.scene.add(sweeperMesh);

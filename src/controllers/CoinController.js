@@ -10,13 +10,12 @@ export class CoinController {
     }
 
     spawnInitialCoins() {
-        for (let i = 0; i < 30; i++) {
-            // Spawnear las monedas en el borde delantero de la barrera
-            // Z está entre +2 y +4 para que caigan perfectamente en el área de juego
+        // Llenamos la máquina con 240 monedas iniciales (x3 de 80)
+        for (let i = 0; i < 240; i++) {
             this.spawnCoin(
-                (Math.random() - 0.5) * 8,
-                3 + Math.random() * 2,
-                2 + (Math.random() * 2)
+                (Math.random() - 0.5) * 8, // Ancho
+                2 + Math.random() * 2,     // Altura de caída inicial
+                1 + (Math.random() * 3)    // Profundidad para que caigan en la barrera y el suelo
             );
         }
     }
@@ -38,28 +37,18 @@ export class CoinController {
             coin.mesh.position.copy(coin.body.position);
             coin.mesh.quaternion.copy(coin.body.quaternion);
 
-            // Check if coin fell off bounds (Score logic)
-            if (coin.body.position.y < -5) {
-                // Determine if it was a good fall (Front) or bad fall (Sides)
-                // Front edge is roughly Z > 5.
-
-                if (coin.body.position.z > 5) {
-                    // Good drop! Front edge. 1 Point per coin.
+            // Si la moneda cae al foso inferior (Y < -3)
+            if (coin.body.position.y < -3) {
+                // Si cae por la parte delantera (Z > 6), ganas la moneda
+                if (coin.body.position.z > 6) {
                     this.view.ui.updateMoney(1);
                 } else {
-                    // Side drop - 0 points? Or maybe also 1 point? 
-                    // User asked for "each coin one point", implies all drops.
-                    this.view.ui.updateMoney(1);
+                    // Si cae por los lados, simplemente se pierde (como en el arcade real)
                 }
 
-                // Remove coin from physics and scene
                 this.physics.world.removeBody(coin.body);
                 this.view.removeCoinMesh(coin.mesh);
-
-                // Remove from array
                 this.coins.splice(i, 1);
-
-                // No respawn - coins are finite
             }
         }
     }

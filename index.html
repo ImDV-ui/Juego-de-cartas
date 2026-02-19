@@ -7,31 +7,12 @@
     <title>Coin Pusher Casino Game</title>
     <link rel="stylesheet" href="styles/style.css">
     <style>
-        /* Oculta el cuadro negro del error-log si no hay ningún error dentro */
-        #error-log:empty {
-            display: none;
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
         }
     </style>
-</head>
-
-<body>
-    <div id="error-log"
-        style="position: absolute; top: 0; left: 0; color: red; background: rgba(0,0,0,0.8); z-index: 1000; padding: 10px; font-family: monospace; max-width: 100%;">
-    </div>
-    <script>
-        window.onerror = function (message, source, lineno, colno, error) {
-            const log = document.getElementById('error-log');
-            log.innerHTML += `<div>Error: ${message} at ${source}:${lineno}:${colno}</div>`;
-        };
-        window.addEventListener('unhandledrejection', function (event) {
-            const log = document.getElementById('error-log');
-            log.innerHTML += `<div>Promise Rejection: ${event.reason}</div>`;
-        });
-    </script>
-
-    <div id="game-container">
-        </div>
-
     <script type="importmap">
         {
             "imports": {
@@ -41,6 +22,10 @@
             }
         }
     </script>
+</head>
+
+<body>
+    <div id="game-container"></div>
     <script type="module" src="src/main/Main.js"></script>
 </body>
 

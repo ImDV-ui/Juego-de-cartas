@@ -1,6 +1,6 @@
 export class UIView {
     constructor() {
-        this.money = 50; // Single currency system: Money
+        this.money = 300; // Single currency system: Money (x3 de 100)
 
         this.createUI();
     }
