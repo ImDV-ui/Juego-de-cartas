@@ -1,3 +1,4 @@
+import * as CANNON from 'cannon-es';
 import { GameView } from '../views/GameView.js';
 import { GameData } from '../database/GameData.js';
 import { CoinController } from './CoinController.js';
@@ -25,6 +26,12 @@ export class GameController {
                 this.coinController.spawnCoin(dropX, 4, 1.5);
             }
         });
+
+        this.cardDropTimer = 0;
+        this.nextCardDropTime = 10 + Math.random() * 110; // Initial random time
+        this.cardItems = [];
+
+        this.spawnCardItem();
     }
 
     update(deltaTime) {
@@ -39,6 +46,45 @@ export class GameController {
 
         this.coinController.update(deltaTime);
         this.cardController.update(deltaTime);
+
+        // --- Card Drop Logic ---
+        this.cardDropTimer += deltaTime;
+        if (this.cardDropTimer > this.nextCardDropTime) {
+            this.cardDropTimer = 0;
+            this.nextCardDropTime = 10 + Math.random() * 110; // Random between 10s and 120s
+            this.spawnCardItem();
+        }
+
+        // Update card items physics/visuals
+        for (let i = this.cardItems.length - 1; i >= 0; i--) {
+            const item = this.cardItems[i];
+            item.mesh.position.copy(item.body.position);
+            item.mesh.quaternion.copy(item.body.quaternion);
+
+            if (item.body.position.y < -3) {
+                // Determine if it fell in the winning zone
+                if (item.body.position.z > 6) {
+                    this.cardController.giveRandomCard();
+                }
+
+                // Remove item
+                this.physics.world.removeBody(item.body);
+                this.view.removeItemMesh(item.mesh);
+                this.cardItems.splice(i, 1);
+            }
+        }
+    }
+
+    spawnCardItem() {
+        const x = (Math.random() - 0.5) * 8;
+        const y = 4;
+        const z = 1.5;
+        const position = new CANNON.Vec3(x, y, z);
+
+        const body = this.physics.createCardItem(position);
+        const mesh = this.view.createCardItemMesh(body.position, body.quaternion);
+
+        this.cardItems.push({ body, mesh });
     }
 
     render() {

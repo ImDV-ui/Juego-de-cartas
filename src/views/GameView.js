@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { ColladaLoader } from 'three/addons/loaders/ColladaLoader.js';
 import { UIView } from './UIView.js';
 
 export class GameView {
@@ -36,6 +37,32 @@ export class GameView {
 
         this.setupLights();
         this.createCabinet();
+
+        this.loader = new ColladaLoader();
+        this.coinModelTemplate = null;
+
+        this.loader.load('assets/images/coin/SM64DS_Model.dae', (collada) => {
+            const model = collada.scene;
+
+            // Adjust scale to match physics roughly (radius 0.6)
+            // Assuming model is roughly unit size, scale accordingly. 
+            // Trial and error might be needed for perfect size.
+            model.scale.set(0.02, 0.02, 0.02);
+
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                    // Optional: Improve material if needed
+                    if (child.material) {
+                        child.material.metalness = 0.5;
+                        child.material.roughness = 0.2;
+                    }
+                }
+            });
+            this.coinModelTemplate = model;
+            console.log("Custom coin model loaded");
+        });
 
         window.addEventListener('resize', () => this.onWindowResize(), false);
     }
@@ -94,7 +121,39 @@ export class GameView {
     }
 
     createCoinMesh(position, quaternion) {
-        const mesh = new THREE.Mesh(this.coinGeometry, this.coinMaterial);
+        let mesh;
+
+        if (this.coinModelTemplate) {
+            mesh = this.coinModelTemplate.clone();
+        } else {
+            // Fallback while loading
+            mesh = new THREE.Mesh(this.coinGeometry, this.coinMaterial);
+        }
+
+        mesh.position.copy(position);
+        mesh.quaternion.copy(quaternion);
+
+        // If using custom model, we might need to adjust rotation if axis differs
+        if (this.coinModelTemplate) {
+            // Custom adjustments if needed after cloning
+        }
+
+        this.scene.add(mesh);
+        return mesh;
+    }
+
+    removeCoinMesh(mesh) {
+        this.scene.remove(mesh);
+    }
+
+    createCardItemMesh(position, quaternion) {
+        const geometry = new THREE.BoxGeometry(1, 0.2, 1.4);
+        const material = new THREE.MeshStandardMaterial({
+            color: 0x9b59b6, // Purple color for the card item
+            roughness: 0.4,
+            metalness: 0.1
+        });
+        const mesh = new THREE.Mesh(geometry, material);
         mesh.position.copy(position);
         mesh.quaternion.copy(quaternion);
         mesh.castShadow = true;
@@ -103,8 +162,10 @@ export class GameView {
         return mesh;
     }
 
-    removeCoinMesh(mesh) {
+    removeItemMesh(mesh) {
         this.scene.remove(mesh);
+        if (mesh.geometry) mesh.geometry.dispose();
+        if (mesh.material) mesh.material.dispose();
     }
 
     render() {

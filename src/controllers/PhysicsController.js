@@ -5,7 +5,10 @@ export class PhysicsController {
         this.world = new CANNON.World();
         this.world.gravity.set(0, -9.82, 0);
         this.world.broadphase = new CANNON.SAPBroadphase(this.world);
-        this.world.allowSleep = true;
+
+        // --- SOLUCIÓN: Desactivamos el "Sleep" para que las monedas NUNCA pierdan su física ---
+        this.world.allowSleep = false;
+
         this.world.solver.iterations = 10;
 
         this.materials = {
@@ -75,13 +78,30 @@ export class PhysicsController {
             material: this.materials.coin,
             linearDamping: 0.1,
             angularDamping: 0.5,
-
+            // Aseguramos que la moneda individual tampoco tenga configuraciones residuales de sleep
+            allowSleep: false
         });
 
         const q = new CANNON.Quaternion();
         q.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
         body.addShape(shape, new CANNON.Vec3(0, 0, 0), q);
 
+        body.position.copy(position);
+        this.world.addBody(body);
+        return body;
+    }
+
+    createCardItem(position) {
+        const shape = new CANNON.Box(new CANNON.Vec3(0.5, 0.1, 0.7)); // Thicker card
+        const body = new CANNON.Body({
+            mass: 1,
+            material: this.materials.coin, // Reusing coin material for simple friction
+            linearDamping: 0.1,
+            angularDamping: 0.5,
+            allowSleep: false
+        });
+
+        body.addShape(shape);
         body.position.copy(position);
         this.world.addBody(body);
         return body;

@@ -6,9 +6,10 @@ export class CardView {
         this.container.style.left = '30px';
         this.container.style.top = '50%';
         this.container.style.transform = 'translateY(-50%)';
-        this.container.style.display = 'flex';
-        this.container.style.flexDirection = 'column';
-        this.container.style.gap = '25px';
+        this.container.style.display = 'grid';
+        this.container.style.gridTemplateRows = 'repeat(5, 140px)';
+        this.container.style.gridAutoFlow = 'column';
+        this.container.style.gap = '10px';
         this.container.style.pointerEvents = 'none';
         document.body.appendChild(this.container);
     }
@@ -17,8 +18,8 @@ export class CardView {
         // 1. El Hueco (Slot)
         const slot = document.createElement('div');
         slot.className = 'card-slot';
-        slot.style.width = '130px';
-        slot.style.height = '182px';
+        slot.style.width = '100px';
+        slot.style.height = '140px';
         slot.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
         slot.style.border = '2px dashed rgba(255, 255, 255, 0.2)';
         slot.style.borderRadius = '12px';

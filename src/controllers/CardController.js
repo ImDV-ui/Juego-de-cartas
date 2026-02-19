@@ -27,7 +27,36 @@ export class CardController {
         });
     }
 
+    giveRandomCard() {
+        const cardTypes = [
+            {
+                id: 'bonus_100',
+                name: 'MEGA SHOWER',
+                description: 'Drops 30 BIG coins!',
+                type: 'COIN_SHOWER',
+                image: 'assets/images/lluvia de monedas.png'
+            },
+            {
+                id: 'double_money',
+                name: 'DOUBLE MONEY',
+                description: 'x2 Money for 2 mins!',
+                type: 'DOUBLE_MONEY',
+                image: 'assets/images/x2 de dinero.png'
+            }
+        ];
+
+        const randomCard = cardTypes[Math.floor(Math.random() * cardTypes.length)];
+        // Create a copy to ensure unique ID if needed, though simple logic works for now
+        this.addCard({ ...randomCard, id: randomCard.id + '_' + Date.now() });
+        console.log("Random card given:", randomCard.name);
+    }
+
     addCard(cardData) {
+        if (this.cards.length >= 10) {
+            console.warn("Max cards (10) reached. Cannot add more.");
+            return;
+        }
+
         const cardElement = this.view.createCardElement(cardData);
         const cardObj = { data: cardData, element: cardElement };
         this.cards.push(cardObj);
@@ -62,6 +91,7 @@ export class CardController {
         this.draggedCard.element.style.position = 'fixed';
         this.draggedCard.element.style.zIndex = '1000';
         this.draggedCard.element.style.cursor = 'grabbing';
+        this.draggedCard.element.style.transform = 'scale(1.5)';
         this.draggedCard.element.style.boxShadow = '0 10px 20px rgba(0,0,0,0.5)';
 
         // 5. Posicionar inicialmente
@@ -126,6 +156,7 @@ export class CardController {
             this.draggedCard.element.style.width = '100%';
             this.draggedCard.element.style.height = '100%';
             this.draggedCard.element.style.zIndex = '';
+            this.draggedCard.element.style.transform = '';
             this.draggedCard.element.style.boxShadow = '2px 6px 15px rgba(0,0,0,0.5)';
             this.draggedCard.element.style.cursor = 'grab';
         }
