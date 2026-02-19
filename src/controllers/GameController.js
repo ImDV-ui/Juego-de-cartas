@@ -27,8 +27,14 @@ export class GameController {
             }
         });
 
+        this.cardDropTimer = 0;
+        this.nextCardDropTime = 10 + Math.random() * 110;
+        this.cardItems = [];
+        this.barrels = [];
+
         this.spawnCardItem();
 
+        this.trySpawnBarrelTest();
     }
 
     update(deltaTime) {
@@ -69,7 +75,26 @@ export class GameController {
             }
         }
 
+        for (let i = this.barrels.length - 1; i >= 0; i--) {
+            const item = this.barrels[i];
 
+            // --- ESCUDO ANTI-ERRORES DE CANNON ---
+            if (isNaN(item.body.position.y)) {
+                this.physics.world.removeBody(item.body);
+                this.view.removeBarrelMesh(item.mesh);
+                this.barrels.splice(i, 1);
+                continue;
+            }
+
+            item.mesh.position.copy(item.body.position);
+            item.mesh.quaternion.copy(item.body.quaternion);
+
+            if (item.body.position.y < -5) {
+                this.physics.world.removeBody(item.body);
+                this.view.removeBarrelMesh(item.mesh);
+                this.barrels.splice(i, 1);
+            }
+        }
     }
 
     spawnCardItem() {

@@ -104,23 +104,23 @@ export class PhysicsController {
     }
 
     createBarrel(position, velocity) {
-        // Usamos una esfera de tamaño seguro para físicas estables
-        const shape = new CANNON.Sphere(1.1);
+        // Barrel shape: Cylinder approx radius 1.2 and height 3.0 (matches 3x visual scale)
+        // Using same physics properties as coins/cards for stability, just scaled up.
+        const shape = new CANNON.Cylinder(1.2, 1.2, 3.0, 16);
         const body = new CANNON.Body({
-            mass: 20,
+            mass: 5, // Reduced from 50 to 5 for stability (closer to coins' 1.0)
             material: this.materials.coin,
             linearDamping: 0.1,
-            angularDamping: 0.1,
+            angularDamping: 0.5, // Matches coins/cards
             allowSleep: false
         });
 
-        body.addShape(shape);
-        body.position.copy(position);
+        // Cannon Cylinder is along Z axis. Rotate to align with Y axis (upright).
+        const q = new CANNON.Quaternion();
+        q.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+        body.addShape(shape, new CANNON.Vec3(0, 0, 0), q);
 
-        // Tumbamos el cuerpo físico
-        const qBody = new CANNON.Quaternion();
-        qBody.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), Math.PI / 2);
-        body.quaternion.copy(qBody);
+        body.position.copy(position);
 
         if (velocity) {
             body.velocity.copy(velocity);

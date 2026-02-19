@@ -36,10 +36,6 @@ export class GameView {
             emissiveIntensity: 0.2
         });
 
-        // Materiales para el barril geométrico
-        this.barrelWoodMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.8 }); // Marrón madera
-        this.barrelMetalMaterial = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.7, roughness: 0.3 }); // Gris metálico
-
         this.setupLights();
         this.createCabinet();
 
@@ -200,6 +196,7 @@ export class GameView {
 
         this.loadMarioModels();
         this.loadKongModel();
+        this.loadBarrelModel();
     }
 
     loadMarioModels() {
@@ -287,47 +284,67 @@ export class GameView {
         });
     }
 
-    // --- NUEVA FUNCIÓN: Crea el barril geométrico ---
+    loadBarrelModel() {
+        if (!this.loader) this.loader = new ColladaLoader();
+
+        this.barrelModelTemplate = null;
+
+        // %20 sustituye al espacio en la ruta "DK Barrel" para evitar fallos de lectura HTTP
+        this.loader.load('assets/images/DK%20Barrel/DKBarrel.dae', (collada) => {
+            const model = collada.scene;
+
+            const box = new THREE.Box3().setFromObject(model);
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const scale = 3.0 / maxDim;
+
+            model.scale.set(scale, scale, scale);
+
+            const center = box.getCenter(new THREE.Vector3());
+            model.position.sub(center.multiplyScalar(scale));
+
+            const group = new THREE.Group();
+            group.add(model);
+
+            this.barrelModelTemplate = group;
+            console.log("✅ Modelo del Barril DK cargado correctamente.");
+
+        }, undefined, (error) => {
+            console.error('❌ Error cargando el modelo del barril DK:', error);
+            // Si falla marcamos un error para activar el barril procedural (fallback)
+            this.barrelModelTemplate = 'error';
+        });
+    }
+
     createBarrelMesh(position, quaternion) {
-        const barrelGroup = new THREE.Group();
+        let mesh;
 
-        // Dimensiones del barril
-        const radius = 1.0;
-        const height = 2.5;
-        const segments = 16;
+        // Comprobamos que exista y que NO sea un error de carga
+        if (this.barrelModelTemplate && this.barrelModelTemplate !== 'error') {
+            mesh = this.barrelModelTemplate.clone();
+        } else {
+            console.warn("⚠️ Usando cilindro de emergencia (el modelo 3D aún no carga o falló).");
+            // Tamaño similar a shape de CANNON: 1.05 de radio, 3.0 de alto
+            const geometry = new THREE.CylinderGeometry(1.05, 1.05, 3.0, 16);
+            const material = new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.9 });
+            const basicMesh = new THREE.Mesh(geometry, material);
 
-        // Cuerpo principal (cilindro de madera)
-        const bodyGeo = new THREE.CylinderGeometry(radius, radius, height, segments);
-        const bodyMesh = new THREE.Mesh(bodyGeo, this.barrelWoodMaterial);
-        bodyMesh.castShadow = true;
-        bodyMesh.receiveShadow = true;
-        barrelGroup.add(bodyMesh);
+            mesh = new THREE.Group();
+            mesh.add(basicMesh);
+        }
 
-        // Anillos metálicos (toroides)
-        const ringRadius = radius + 0.05;
-        const tubeRadius = 0.08;
-        const ringGeo = new THREE.TorusGeometry(ringRadius, tubeRadius, 8, segments);
+        mesh.position.copy(position);
+        mesh.quaternion.copy(quaternion);
 
-        // Anillo superior
-        const ring1 = new THREE.Mesh(ringGeo, this.barrelMetalMaterial);
-        ring1.position.y = height * 0.25;
-        ring1.rotation.x = Math.PI / 2; // Tumbar el anillo
-        ring1.castShadow = true;
-        barrelGroup.add(ring1);
+        mesh.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
 
-        // Anillo inferior
-        const ring2 = new THREE.Mesh(ringGeo, this.barrelMetalMaterial);
-        ring2.position.y = -height * 0.25;
-        ring2.rotation.x = Math.PI / 2; // Tumbar el anillo
-        ring2.castShadow = true;
-        barrelGroup.add(ring2);
-
-        // Posicionar y rotar el grupo entero
-        barrelGroup.position.copy(position);
-        barrelGroup.quaternion.copy(quaternion);
-
-        this.scene.add(barrelGroup);
-        return barrelGroup;
+        this.scene.add(mesh);
+        return mesh;
     }
 
     removeBarrelMesh(mesh) {
