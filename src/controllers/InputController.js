@@ -4,7 +4,7 @@ export class InputController {
         this.isMouseDown = false;
         this.mouseX = 0;
         this.lastDropTime = 0;
-        this.dropInterval = 150; // Drop a coin every 150ms
+        this.dropInterval = 150;
 
         this.initListeners();
         this.update();
@@ -22,10 +22,10 @@ export class InputController {
     }
 
     onMouseDown(e) {
-        if (e.target.closest('.game-card') || e.target.closest('#card-container')) return; // Ignore if clicking card
+        if (e.target.closest('.game-card') || e.target.closest('#card-container')) return;
         this.isMouseDown = true;
         this.updateMousePosition(e.clientX);
-        this.tryDrop(true); // Immediate drop on click
+        this.tryDrop(true);
     }
 
     onMouseMove(e) {
@@ -52,7 +52,6 @@ export class InputController {
     }
 
     updateMousePosition(clientX) {
-        // Normalize X from -1 to 1
         this.mouseX = (clientX / window.innerWidth) * 2 - 1;
     }
 
@@ -69,7 +68,7 @@ export class InputController {
         requestAnimationFrame(() => this.update());
     }
 
-    // Función para que otros archivos se suscriban a este evento
+
     onDrop(callback) {
         this.onDropCallbacks.push(callback);
     }

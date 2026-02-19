@@ -6,7 +6,7 @@ export const CoinType = {
 
 export class CoinAttributes {
     static get(type) {
-        // Return attributes based on type
+
         return {};
     }
 }

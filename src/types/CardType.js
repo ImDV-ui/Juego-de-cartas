@@ -6,7 +6,7 @@ export const CardType = {
 
 export class CardAttributes {
     static get(type) {
-        // Return attributes based on type
+
         return {};
     }
 }

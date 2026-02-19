@@ -10,21 +10,20 @@ export class CoinController {
     }
 
     spawnInitialCoins() {
-        // Al ser gigantes, con 40 monedas iniciales la máquina ya se ve muy llena
+
         for (let i = 0; i < 40; i++) {
             this.spawnCoin(
-                (Math.random() - 0.5) * 8, 
-                2 + Math.random() * 2,     
-                1 + (Math.random() * 3)    
+                (Math.random() - 0.5) * 8,
+                2 + Math.random() * 2,
+                1 + (Math.random() * 3)
             );
         }
     }
 
     spawnCoin(x, y, z) {
-        // ¡REGLA ANTI-LAG ELIMINADA! Ya no borramos monedas antiguas.
+
 
         const position = new CANNON.Vec3(x, y, z);
-        // RADIO AL DOBLE (Antes 0.3, ahora 0.6)
         const radius = 0.6;
 
         const body = this.physics.createCoin(radius, position);
@@ -43,7 +42,7 @@ export class CoinController {
             if (coin.body.position.y < -3) {
                 if (coin.body.position.z > 6) {
                     this.view.ui.updateMoney(1);
-                } 
+                }
                 this.physics.world.removeBody(coin.body);
                 this.view.removeCoinMesh(coin.mesh);
                 this.coins.splice(i, 1);

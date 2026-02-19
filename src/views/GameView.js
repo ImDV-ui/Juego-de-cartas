@@ -23,16 +23,15 @@ export class GameView {
         this.coinMeshes = [];
         this.pusherMesh = null;
 
-        // --- MONEDA GIGANTE ---
-        // Radio: 0.6, Grosor: 0.3 (Antes era 0.3 y 0.15)
-        this.coinGeometry = new THREE.CylinderGeometry(0.6, 0.6, 0.3, 16); 
+
+        this.coinGeometry = new THREE.CylinderGeometry(0.6, 0.6, 0.3, 16);
         this.coinGeometry.rotateX(-Math.PI / 2);
 
         this.coinMaterial = new THREE.MeshStandardMaterial({
-            color: 0xffd700, 
-            metalness: 0.4,  
+            color: 0xffd700,
+            metalness: 0.4,
             roughness: 0.3,
-            emissive: 0x443300 
+            emissive: 0x443300
         });
 
         this.setupLights();

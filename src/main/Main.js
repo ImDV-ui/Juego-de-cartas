@@ -5,7 +5,7 @@ class Main {
     constructor() {
         this.gameController = new GameController();
         this.gameLoop = new GameLoop(this.gameController);
-        
+
         this.init();
     }
 
@@ -15,7 +15,7 @@ class Main {
     }
 }
 
-// Start the application once the DOM is fully loaded
+
 document.addEventListener('DOMContentLoaded', () => {
     new Main();
 });
