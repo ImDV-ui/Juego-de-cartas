@@ -1,42 +1,76 @@
 export class InputController {
     constructor() {
-        this.onDropCallbacks = []; // Lista de funciones a ejecutar al hacer clic
+        this.onDropCallbacks = [];
+        this.isMouseDown = false;
+        this.mouseX = 0;
+        this.lastDropTime = 0;
+        this.dropInterval = 150; // Drop a coin every 150ms
+
         this.initListeners();
+        this.update();
     }
 
     initListeners() {
-        // Escuchar clic del ratón
         window.addEventListener('mousedown', (e) => this.onMouseDown(e));
-        
-        // Escuchar toque en pantalla (para móviles)
-        window.addEventListener('touchstart', (e) => {
-            if (e.touches.length > 0) {
-                this.onMouseDown(e.touches[0]);
-            }
-        }, { passive: false });
+        window.addEventListener('mousemove', (e) => this.onMouseMove(e));
+        window.addEventListener('mouseup', () => this.onMouseUp());
+        window.addEventListener('mouseleave', () => this.onMouseUp());
+
+        window.addEventListener('touchstart', (e) => this.onTouchStart(e), { passive: false });
+        window.addEventListener('touchmove', (e) => this.onTouchMove(e), { passive: false });
+        window.addEventListener('touchend', () => this.onMouseUp());
     }
 
     onMouseDown(e) {
-        // 1. Obtenemos la posición X del ratón en la pantalla (de 0 a ancho de pantalla)
-        const screenX = e.clientX;
-        
-        // 2. Lo normalizamos para que vaya de -1 (izquierda) a 1 (derecha)
-        const normalizedX = (screenX / window.innerWidth) * 2 - 1;
-        
-        // 3. Avisamos a los controladores que estén escuchando (el GameController)
-        this.onDropCallbacks.forEach(callback => callback(normalizedX));
+        if (e.target.closest('.game-card') || e.target.closest('#card-container')) return; // Ignore if clicking card
+        this.isMouseDown = true;
+        this.updateMousePosition(e.clientX);
+        this.tryDrop(true); // Immediate drop on click
+    }
+
+    onMouseMove(e) {
+        this.updateMousePosition(e.clientX);
+    }
+
+    onMouseUp() {
+        this.isMouseDown = false;
+    }
+
+    onTouchStart(e) {
+        if (e.target.closest('.game-card') || e.target.closest('#card-container')) return;
+        if (e.touches.length > 0) {
+            this.isMouseDown = true;
+            this.updateMousePosition(e.touches[0].clientX);
+            this.tryDrop(true);
+        }
+    }
+
+    onTouchMove(e) {
+        if (e.touches.length > 0) {
+            this.updateMousePosition(e.touches[0].clientX);
+        }
+    }
+
+    updateMousePosition(clientX) {
+        // Normalize X from -1 to 1
+        this.mouseX = (clientX / window.innerWidth) * 2 - 1;
+    }
+
+    tryDrop(force = false) {
+        const now = Date.now();
+        if (force || (this.isMouseDown && now - this.lastDropTime > this.dropInterval)) {
+            this.lastDropTime = now;
+            this.onDropCallbacks.forEach(callback => callback(this.mouseX));
+        }
+    }
+
+    update() {
+        this.tryDrop();
+        requestAnimationFrame(() => this.update());
     }
 
     // Función para que otros archivos se suscriban a este evento
     onDrop(callback) {
         this.onDropCallbacks.push(callback);
-    }
-
-    onMouseMove(e) {
-        // Se usará para las cartas más adelante
-    }
-
-    onMouseUp(e) {
-        // Se usará para soltar las cartas más adelante
     }
 }
