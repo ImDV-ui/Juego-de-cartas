@@ -196,6 +196,20 @@ export class CardController {
                     }
                 }, 120000);
             }
+        } else if (cardData.type === 'GIFT_CARD') {
+            console.log("Gift Card Collected!");
+            // Simple reward: Drop 10 coins
+            if (this.gameController && this.gameController.coinController) {
+                for (let i = 0; i < 10; i++) {
+                    setTimeout(() => {
+                        this.gameController.coinController.spawnCoin(
+                            (Math.random() - 0.5) * 4,
+                            4,
+                            1 + Math.random() * 2
+                        );
+                    }, i * 200);
+                }
+            }
         }
     }
 

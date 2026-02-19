@@ -15,7 +15,7 @@ export class UIView {
         this.container.style.width = '100%';
         this.container.style.height = '100%';
         this.container.style.pointerEvents = 'none';
-        this.container.style.fontFamily = "'Courier New', Courier, monospace";
+        this.container.style.fontFamily = "'Press Start 2P', 'Courier New', monospace";
         this.container.style.fontWeight = 'bold';
         this.container.style.textShadow = '2px 2px 0 #000';
         document.body.appendChild(this.container);
@@ -26,7 +26,7 @@ export class UIView {
         this.moneyElement.style.top = '20px';
         this.moneyElement.style.right = '40px';
         this.moneyElement.style.fontSize = '32px';
-        this.moneyElement.style.color = '#00ff00';
+        this.moneyElement.style.color = '#ffffff'; // White color
         this.moneyElement.innerText = `MONEY: ${this.money}`;
         this.container.appendChild(this.moneyElement);
 
@@ -50,12 +50,14 @@ export class UIView {
         this.moneyElement.innerText = `MONEY: ${this.money}`;
 
 
+
+
+
         this.moneyElement.style.transform = 'scale(1.2)';
-        this.moneyElement.style.color = amount > 0 ? '#00ff00' : '#ff0000';
+        // Removed color change to prevent red blink. Keeping it white.
 
         setTimeout(() => {
             this.moneyElement.style.transform = 'scale(1)';
-            this.moneyElement.style.color = '#00ff00';
         }, 100);
     }
 }

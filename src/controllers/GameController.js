@@ -64,7 +64,11 @@ export class GameController {
             if (item.body.position.y < -3) {
                 // Determine if it fell in the winning zone
                 if (item.body.position.z > 6) {
-                    this.cardController.giveRandomCard();
+                    // Entregar exactamente la carta que cayó
+                    this.cardController.addCard({
+                        ...item.cardData,
+                        id: item.cardData.type + '_' + Date.now() // Forzamos un ID único
+                    });
                 }
 
                 // Remove item
@@ -81,10 +85,35 @@ export class GameController {
         const z = 1.5;
         const position = new CANNON.Vec3(x, y, z);
 
-        const body = this.physics.createCardItem(position);
-        const mesh = this.view.createCardItemMesh(body.position, body.quaternion);
+        // 1. Definimos las cartas posibles
+        const cardTypes = [
+            {
+                id: 'bonus_100',
+                name: 'MEGA SHOWER',
+                description: 'Drops 30 BIG coins!',
+                type: 'COIN_SHOWER',
+                image: 'assets/images/lluvia de monedas.png'
+            },
+            {
+                id: 'double_money',
+                name: 'DOUBLE MONEY',
+                description: 'x2 Money for 2 mins!',
+                type: 'DOUBLE_MONEY',
+                image: 'assets/images/x2 de dinero.png'
+            }
+        ];
 
-        this.cardItems.push({ body, mesh });
+
+
+        // 2. Elegimos una carta aleatoria
+        const randomCard = cardTypes[Math.floor(Math.random() * cardTypes.length)];
+
+        // 3. Creamos el cuerpo físico y la malla visual pasándole la imagen
+        const body = this.physics.createCardItem(position);
+        const mesh = this.view.createCardItemMesh(body.position, body.quaternion, randomCard.image);
+
+        // Guardamos la información de la carta junto al objeto
+        this.cardItems.push({ body, mesh, cardData: randomCard });
     }
 
     render() {

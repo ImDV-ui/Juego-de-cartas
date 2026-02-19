@@ -92,10 +92,12 @@ export class PhysicsController {
     }
 
     createCardItem(position) {
-        const shape = new CANNON.Box(new CANNON.Vec3(0.5, 0.1, 0.7)); // Thicker card
+        // Las físicas en CANNON usan "half-extents" (la mitad de lo que mide en Three.js)
+        // Mitades de: 2.0 (ancho), 0.1 (alto), 3.0 (largo)
+        const shape = new CANNON.Box(new CANNON.Vec3(1.0, 0.05, 1.5));
         const body = new CANNON.Body({
-            mass: 1,
-            material: this.materials.coin, // Reusing coin material for simple friction
+            mass: 1.5, // Un poco más de peso para que empuje bien las monedas
+            material: this.materials.coin,
             linearDamping: 0.1,
             angularDamping: 0.5,
             allowSleep: false

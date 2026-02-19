@@ -1,0 +1,157 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+  <asset />
+  <library_images>
+    <image id="BlockBrick2D">
+      <init_from>BlockBrick2D.png</init_from>
+    </image>
+  </library_images>
+  <library_materials>
+    <material id="BodyMT">
+      <instance_effect url="#Effect_BodyMT" />
+    </material>
+  </library_materials>
+  <library_effects>
+    <effect id="Effect_BodyMT">
+      <profile_COMMON>
+        <newparam sid="surface_BodyMT-diffuse">
+          <surface type="2D">
+            <init_from>BlockBrick2D</init_from>
+            <format>A8R8G8B8</format>
+          </surface>
+        </newparam>
+        <newparam sid="sampler_BodyMT-diffuse">
+          <sampler2D>
+            <source>surface_BodyMT-diffuse</source>
+            <wrap_s>WRAP</wrap_s>
+            <wrap_t>WRAP</wrap_t>
+          </sampler2D>
+        </newparam>
+        <technique sid="common">
+          <phong>
+            <diffuse>
+              <texture texture="sampler_BodyMT-diffuse" texcoord="CHANNEL0" />
+            </diffuse>
+            <emission>
+              <color sid="emission">0 0 0 1</color>
+            </emission>
+            <specular>
+              <color sid="specular">0 0 0 1</color>
+            </specular>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+  </library_effects>
+  <library_geometries>
+    <geometry id="BlockBrickBig2D__BodyMT-mesh" name="BlockBrickBig2D__BodyMT">
+      <mesh>
+        <source id="BlockBrickBig2D__BodyMT-position">
+          <float_array id="BlockBrickBig2D__BodyMT-position-array" count="360">50 300 2.870001 50 200 2.870001 150 300 2.870001 150 200 2.870001 150 300 -2.870001 150 200 -2.870001 50 300 -2.870001 50 200 -2.870001 150 200 2.870001 150 200 -2.870001 150 300 2.870001 150 300 -2.870001 50 300 2.870001 150 300 2.870001 50 300 -2.870001 150 300 -2.870001 -50 300 2.870001 -50 200 2.870001 50 300 2.870001 50 200 2.870001 50 300 -2.870001 50 200 -2.870001 -50 300 -2.870001 -50 200 -2.870001 -50 300 2.870001 50 300 2.870001 -50 300 -2.870001 50 300 -2.870001 -150 300 2.870001 -150 200 2.870001 -50 300 2.870001 -50 200 2.870001 -50 300 -2.870001 -50 200 -2.870001 -150 300 -2.870001 -150 200 -2.870001 -150 200 2.870001 -150 300 2.870001 -150 200 -2.870001 -150 300 -2.870001 -150 300 2.870001 -50 300 2.870001 -150 300 -2.870001 -50 300 -2.870001 -150 200 2.870001 -150 100 2.870001 -50 200 2.870001 -50 100 2.870001 -50 200 -2.870001 -50 100 -2.870001 -150 200 -2.870001 -150 100 -2.870001 -150 100 2.870001 -150 200 2.870001 -150 100 -2.870001 -150 200 -2.870001 -50 200 2.870001 -50 100 2.870001 50 200 2.870001 50 100 2.870001 50 200 -2.870001 50 100 -2.870001 -50 200 -2.870001 -50 100 -2.870001 50 200 2.870001 50 100 2.870001 150 200 2.870001 150 100 2.870001 150 200 -2.870001 150 100 -2.870001 50 200 -2.870001 50 100 -2.870001 150 100 2.870001 150 100 -2.870001 150 200 2.870001 150 200 -2.870001 50 100 2.870001 50 0 2.870001 150 100 2.870001 150 0 2.870001 150 100 -2.870001 150 0 -2.870001 50 100 -2.870001 50 0 -2.870001 50 0 2.870001 50 0 -2.870001 150 0 2.870001 150 0 -2.870001 150 0 2.870001 150 0 -2.870001 150 100 2.870001 150 100 -2.870001 -50 100 2.870001 -50 0 2.870001 50 100 2.870001 50 0 2.870001 50 100 -2.870001 50 0 -2.870001 -50 100 -2.870001 -50 0 -2.870001 -50 0 2.870001 -50 0 -2.870001 50 0 2.870001 50 0 -2.870001 -150 100 2.870001 -150 0 2.870001 -50 100 2.870001 -50 0 2.870001 -50 100 -2.870001 -50 0 -2.870001 -150 100 -2.870001 -150 0 -2.870001 -150 0 2.870001 -150 0 -2.870001 -50 0 2.870001 -50 0 -2.870001 -150 0 2.870001 -150 100 2.870001 -150 0 -2.870001 -150 100 -2.870001</float_array>
+          <technique_common>
+            <accessor source="#BlockBrickBig2D__BodyMT-position-array" count="120" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="BlockBrickBig2D__BodyMT-normal">
+          <float_array id="BlockBrickBig2D__BodyMT-normal-array" count="360">0 0 1 0 0 1 0 0 1 0 0 1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 1 0 0 1 0 0 1 0 0 1 0 0 0 1 0 0 1 0 0 1 0 0 1 0 0 0 1 0 0 1 0 0 1 0 0 1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 1 0 0 1 0 0 1 0 0 1 0 0 0 1 0 0 1 0 0 1 0 0 1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 -1 0 0 -1 0 0 -1 0 0 -1 0 0 0 1 0 0 1 0 0 1 0 0 1 0 0 0 1 0 0 1 0 0 1 0 0 1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 -1 0 0 -1 0 0 -1 0 0 -1 0 0 0 0 1 0 0 1 0 0 1 0 0 1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 1 0 0 1 0 0 1 0 0 1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 1 0 0 1 0 0 1 0 0 1 0 0 0 0 1 0 0 1 0 0 1 0 0 1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 -1 0 0 -1 0 0 -1 0 0 -1 0 1 0 0 1 0 0 1 0 0 1 0 0 0 0 1 0 0 1 0 0 1 0 0 1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 0 1 0 0 1 0 0 1 0 0 1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 -1 0 0 -1 0 0 -1 0 0 -1 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0</float_array>
+          <technique_common>
+            <accessor source="#BlockBrickBig2D__BodyMT-normal-array" count="120" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="BlockBrickBig2D__BodyMT-texcoord">
+          <float_array id="BlockBrickBig2D__BodyMT-texcoord-array" count="240">0 1 0 0 1 1 1 0 1 1 1 0 0 1 0 0 1 0 1 0 1 1 1 1 0 1 1 1 0 1 1 1 0 1 0 0 1 1 1 0 1 1 1 0 0 1 0 0 0 1 1 1 0 1 1 1 0 1 0 0 1 1 1 0 1 1 1 0 0 1 0 0 0 0 0 1 0 0 0 1 0 1 1 1 0 1 1 1 0 1 0 0 1 1 1 0 1 1 1 0 0 1 0 0 0 0 0 1 0 0 0 1 0 1 0 0 1 1 1 0 1 1 1 0 0 1 0 0 0 1 0 0 1 1 1 0 1 1 1 0 0 1 0 0 1 0 1 0 1 1 1 1 0 1 0 0 1 1 1 0 1 1 1 0 0 1 0 0 0 0 0 0 1 0 1 0 1 0 1 0 1 1 1 1 0 1 0 0 1 1 1 0 1 1 1 0 0 1 0 0 0 0 0 0 1 0 1 0 0 1 0 0 1 1 1 0 1 1 1 0 0 1 0 0 0 0 0 0 1 0 1 0 0 0 0 1 0 0 0 1</float_array>
+          <technique_common>
+            <accessor source="#BlockBrickBig2D__BodyMT-texcoord-array" count="120" stride="2">
+              <param name="S" type="float" />
+              <param name="T" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="BlockBrickBig2D__BodyMT-vertex">
+          <input semantic="POSITION" source="#BlockBrickBig2D__BodyMT-position" />
+        </vertices>
+        <triangles material="BodyMT" count="60">
+          <input semantic="VERTEX" source="#BlockBrickBig2D__BodyMT-vertex" offset="0" />
+          <input semantic="NORMAL" source="#BlockBrickBig2D__BodyMT-normal" offset="1" />
+          <input semantic="TEXCOORD" source="#BlockBrickBig2D__BodyMT-texcoord" offset="2" set="0" />
+          <p>0 0 0 1 1 1 2 2 2 1 1 1 3 3 3 2 2 2 4 4 4 5 5 5 6 6 6 5 5 5 7 7 7 6 6 6 8 8 8 9 9 9 10 10 10 9 9 9 11 11 11 10 10 10 12 12 12 13 13 13 14 14 14 13 13 13 15 15 15 14 14 14 16 16 16 17 17 17 18 18 18 17 17 17 19 19 19 18 18 18 20 20 20 21 21 21 22 22 22 21 21 21 23 23 23 22 22 22 24 24 24 25 25 25 26 26 26 25 25 25 27 27 27 26 26 26 28 28 28 29 29 29 30 30 30 29 29 29 31 31 31 30 30 30 32 32 32 33 33 33 34 34 34 33 33 33 35 35 35 34 34 34 36 36 36 37 37 37 38 38 38 37 37 37 39 39 39 38 38 38 40 40 40 41 41 41 42 42 42 41 41 41 43 43 43 42 42 42 44 44 44 45 45 45 46 46 46 45 45 45 47 47 47 46 46 46 48 48 48 49 49 49 50 50 50 49 49 49 51 51 51 50 50 50 52 52 52 53 53 53 54 54 54 53 53 53 55 55 55 54 54 54 56 56 56 57 57 57 58 58 58 57 57 57 59 59 59 58 58 58 60 60 60 61 61 61 62 62 62 61 61 61 63 63 63 62 62 62 64 64 64 65 65 65 66 66 66 65 65 65 67 67 67 66 66 66 68 68 68 69 69 69 70 70 70 69 69 69 71 71 71 70 70 70 72 72 72 73 73 73 74 74 74 73 73 73 75 75 75 74 74 74 76 76 76 77 77 77 78 78 78 77 77 77 79 79 79 78 78 78 80 80 80 81 81 81 82 82 82 81 81 81 83 83 83 82 82 82 84 84 84 85 85 85 86 86 86 85 85 85 87 87 87 86 86 86 88 88 88 89 89 89 90 90 90 89 89 89 91 91 91 90 90 90 92 92 92 93 93 93 94 94 94 93 93 93 95 95 95 94 94 94 96 96 96 97 97 97 98 98 98 97 97 97 99 99 99 98 98 98 100 100 100 101 101 101 102 102 102 101 101 101 103 103 103 102 102 102 104 104 104 105 105 105 106 106 106 105 105 105 107 107 107 106 106 106 108 108 108 109 109 109 110 110 110 109 109 109 111 111 111 110 110 110 112 112 112 113 113 113 114 114 114 113 113 113 115 115 115 114 114 114 116 116 116 117 117 117 118 118 118 117 117 117 119 119 119 118 118 118 </p>
+        </triangles>
+      </mesh>
+    </geometry>
+  </library_geometries>
+  <library_controllers>
+    <controller id="Armature_BlockBrickBig2D__BodyMT-mesh">
+      <skin source="#BlockBrickBig2D__BodyMT-mesh">
+        <bind_shape_matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</bind_shape_matrix>
+        <source id="BlockBrickBig2D__BodyMT-mesh-joint">
+          <Name_array id="BlockBrickBig2D__BodyMT-mesh-joint-array" count="1">AllRoot</Name_array>
+          <technique_common>
+            <accessor source="#BlockBrickBig2D__BodyMT-mesh-joint-array" count="1" stride="1">
+              <param name="JOINT" type="name" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="BlockBrickBig2D__BodyMT-mesh-inv_bind_matrix">
+          <float_array id="BlockBrickBig2D__BodyMT-mesh-inv_bind_matrix-array" count="16">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</float_array>
+          <technique_common>
+            <accessor source="#BlockBrickBig2D__BodyMT-mesh-inv_bind_matrix-array" count="1" stride="16">
+              <param name="TRANSFORM" type="float4x4" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="BlockBrickBig2D__BodyMT-mesh-weight">
+          <float_array id="BlockBrickBig2D__BodyMT-mesh-weight-array" count="1">1</float_array>
+          <technique_common>
+            <accessor source="#BlockBrickBig2D__BodyMT-mesh-weight-array" count="1" stride="1">
+              <param name="WEIGHT" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <joints>
+          <input semantic="JOINT" source="#BlockBrickBig2D__BodyMT-mesh-joint" />
+          <input semantic="INV_BIND_MATRIX" source="#BlockBrickBig2D__BodyMT-mesh-inv_bind_matrix" />
+        </joints>
+        <vertex_weights count="120">
+          <input semantic="JOINT" source="#BlockBrickBig2D__BodyMT-mesh-joint" offset="0" />
+          <input semantic="WEIGHT" source="#BlockBrickBig2D__BodyMT-mesh-weight" offset="1" />
+          <vcount>1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 </vcount>
+          <v>0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 </v>
+        </vertex_weights>
+      </skin>
+    </controller>
+  </library_controllers>
+  <library_visual_scenes>
+    <visual_scene id="Scene" name="Scene">
+      <node id="Armature" name="Armature" type="NODE">
+        <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        <node id="Armature_AllRoot" name="AllRoot" sid="AllRoot" type="JOINT">
+          <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        </node>
+      </node>
+      <node id="BlockBrickBig2D__BodyMT" name="BlockBrickBig2D__BodyMT" type="NODE">
+        <instance_controller url="#Armature_BlockBrickBig2D__BodyMT-mesh">
+          <skeleton>#Armature_AllRoot</skeleton>
+          <bind_material>
+            <technique_common>
+              <instance_material symbol="BodyMT" target="#BodyMT" />
+              <bind_vertex_input semantic="CHANNEL0" input_semantic="TEXCOORD" input_set="0" />
+              <bind_vertex_input semantic="CHANNEL1" input_semantic="TEXCOORD" input_set="1" />
+              <bind_vertex_input semantic="CHANNEL2" input_semantic="TEXCOORD" input_set="2" />
+            </technique_common>
+          </bind_material>
+        </instance_controller>
+      </node>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#Scene" />
+  </scene>
+</COLLADA>
