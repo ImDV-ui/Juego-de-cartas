@@ -21,47 +21,96 @@ export class GameView {
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.container.appendChild(this.renderer.domElement);
 
-        this.coinMeshes = [];
         this.pusherMesh = null;
-
+        this.pendingCoins = [];
 
         this.coinGeometry = new THREE.CylinderGeometry(0.6, 0.6, 0.3, 16);
         this.coinGeometry.rotateX(-Math.PI / 2);
 
         this.coinMaterial = new THREE.MeshStandardMaterial({
             color: 0xffd700,
-            metalness: 0.4,
-            roughness: 0.3,
-            emissive: 0x443300
+            metalness: 0.1, // Almost non-metallic (plastic/cartoon look)
+            roughness: 0.7, // Rough surface to diffuse light
+            emissive: 0x221100,
+            emissiveIntensity: 0.2 // Slight glow to ensure visibility
         });
 
         this.setupLights();
         this.createCabinet();
 
+        // --- CARGA DEL MODELO ---
         this.loader = new ColladaLoader();
-        this.coinModelTemplate = null;
+        this.coinModelTemplate = new THREE.Group();
 
-        this.loader.load('assets/images/coin/SM64DS_Model.dae', (collada) => {
+        // IMPORTANTE: Asegúrate de que esta ruta es la correcta en tu proyecto
+        this.loader.load('assets/images/coin.dae', (collada) => {
             const model = collada.scene;
 
-            // Adjust scale to match physics roughly (radius 0.6)
-            // Assuming model is roughly unit size, scale accordingly. 
-            // Trial and error might be needed for perfect size.
-            model.scale.set(0.02, 0.02, 0.02);
+            // 1. Material corregido con los registros de color del usuario
+            const shinyGoldMaterial = new THREE.MeshStandardMaterial({
+                color: new THREE.Color(255 / 255, 255 / 255, 20 / 255), // Color Register 1: Golden Yellow
+                emissive: new THREE.Color(173 / 255, 137 / 255, 16 / 255), // Color Register 2: Darker Gold/Orange for glow
+                emissiveIntensity: 0.4,
+                metalness: 0.8, // Increased for shiny metallic look
+                roughness: 0.2, // Smoother surface
+                side: THREE.DoubleSide
+            });
 
+            // 2. Extraemos las piezas
             model.traverse((child) => {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
-                    // Optional: Improve material if needed
-                    if (child.material) {
-                        child.material.metalness = 0.5;
-                        child.material.roughness = 0.2;
-                    }
+                if (child.isMesh || child.isSkinnedMesh) {
+                    const cleanGeom = child.geometry.clone();
+                    cleanGeom.computeVertexNormals();
+
+                    const mesh = new THREE.Mesh(cleanGeom, shinyGoldMaterial);
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+
+                    mesh.position.copy(child.position);
+                    mesh.quaternion.copy(child.quaternion);
+                    mesh.scale.copy(child.scale);
+
+                    this.coinModelTemplate.add(mesh);
+
+                    // --- NUEVO: Borde negro (outline) ---
+                    // Usamos EdgesGeometry para detectar bordes afilados (>15 grados)
+                    const edges = new THREE.EdgesGeometry(cleanGeom, 15);
+                    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }));
+
+                    line.position.copy(child.position);
+                    line.quaternion.copy(child.quaternion);
+                    line.scale.copy(child.scale);
+
+                    this.coinModelTemplate.add(line);
                 }
             });
-            this.coinModelTemplate = model;
-            console.log("Custom coin model loaded");
+
+            // 3. Centrado y auto-escalado
+            const box = new THREE.Box3().setFromObject(this.coinModelTemplate);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+
+            this.coinModelTemplate.children.forEach(child => {
+                child.position.sub(center);
+            });
+
+            const maxDimension = Math.max(size.x, size.y, size.z);
+            const exactScale = 1.2 / maxDimension;
+
+            this.coinModelTemplate.scale.set(exactScale, exactScale, exactScale);
+
+            // Revert rotation to 0 since the model is likely already upright (Z-axis)
+            // and physics body is also X-rotated to be Z-axis.
+            this.coinModelTemplate.rotation.set(0, 0, 0);
+
+            // 4. Reemplazo de las monedas iniciales
+            this.pendingCoins.forEach(group => {
+                group.clear();
+                group.add(this.coinModelTemplate.clone());
+            });
+            this.pendingCoins = [];
+
+            console.log("Moneda renderizada con luz e iluminación correcta.");
         });
 
         window.addEventListener('resize', () => this.onWindowResize(), false);
@@ -121,25 +170,23 @@ export class GameView {
     }
 
     createCoinMesh(position, quaternion) {
-        let mesh;
+        const group = new THREE.Group();
+        group.position.copy(position);
+        group.quaternion.copy(quaternion);
 
-        if (this.coinModelTemplate) {
-            mesh = this.coinModelTemplate.clone();
+        if (this.coinModelTemplate && this.coinModelTemplate.children.length > 0) {
+            group.add(this.coinModelTemplate.clone());
         } else {
-            // Fallback while loading
-            mesh = new THREE.Mesh(this.coinGeometry, this.coinMaterial);
+            const fallbackMesh = new THREE.Mesh(this.coinGeometry, this.coinMaterial);
+            fallbackMesh.castShadow = true;
+            fallbackMesh.receiveShadow = true;
+            group.add(fallbackMesh);
+
+            this.pendingCoins.push(group);
         }
 
-        mesh.position.copy(position);
-        mesh.quaternion.copy(quaternion);
-
-        // If using custom model, we might need to adjust rotation if axis differs
-        if (this.coinModelTemplate) {
-            // Custom adjustments if needed after cloning
-        }
-
-        this.scene.add(mesh);
-        return mesh;
+        this.scene.add(group);
+        return group;
     }
 
     removeCoinMesh(mesh) {
@@ -149,7 +196,7 @@ export class GameView {
     createCardItemMesh(position, quaternion) {
         const geometry = new THREE.BoxGeometry(1, 0.2, 1.4);
         const material = new THREE.MeshStandardMaterial({
-            color: 0x9b59b6, // Purple color for the card item
+            color: 0x9b59b6,
             roughness: 0.4,
             metalness: 0.1
         });
