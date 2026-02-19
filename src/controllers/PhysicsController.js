@@ -6,9 +6,7 @@ export class PhysicsController {
         this.world.gravity.set(0, -9.82, 0);
         this.world.broadphase = new CANNON.SAPBroadphase(this.world);
 
-        // --- SOLUCIÓN: Desactivamos el "Sleep" para que las monedas NUNCA pierdan su física ---
         this.world.allowSleep = false;
-
         this.world.solver.iterations = 10;
 
         this.materials = {
@@ -71,14 +69,12 @@ export class PhysicsController {
     }
 
     createCoin(radius, position) {
-
         const shape = new CANNON.Cylinder(radius, radius, 0.3, 12);
         const body = new CANNON.Body({
             mass: 1,
             material: this.materials.coin,
             linearDamping: 0.1,
             angularDamping: 0.5,
-            // Aseguramos que la moneda individual tampoco tenga configuraciones residuales de sleep
             allowSleep: false
         });
 
@@ -92,11 +88,9 @@ export class PhysicsController {
     }
 
     createCardItem(position) {
-        // Las físicas en CANNON usan "half-extents" (la mitad de lo que mide en Three.js)
-        // Mitades de: 1.2 (ancho), 0.16 (alto), 1.8 (largo) -> Half: 0.6, 0.08, 0.9
         const shape = new CANNON.Box(new CANNON.Vec3(0.6, 0.08, 0.9));
         const body = new CANNON.Body({
-            mass: 1.5, // Un poco más de peso para que empuje bien las monedas
+            mass: 1.5,
             material: this.materials.coin,
             linearDamping: 0.1,
             angularDamping: 0.5,
@@ -110,24 +104,24 @@ export class PhysicsController {
     }
 
     createBarrel(position, velocity) {
-        // Barrel shape: Cylinder approx radius 1.05 and height 3.0 (3x original 0.35/1.0)
-        const shape = new CANNON.Cylinder(1.05, 1.05, 3.0, 16);
+        // Usamos una esfera de tamaño seguro para físicas estables
+        const shape = new CANNON.Sphere(1.1);
         const body = new CANNON.Body({
-            mass: 50, // Much heavier to crush coins
+            mass: 20,
             material: this.materials.coin,
             linearDamping: 0.1,
-            angularDamping: 0.5,
+            angularDamping: 0.1,
             allowSleep: false
         });
 
-        // Rotate cylinder to align with Y axis in Three.js terms (if needed)
-        // Cannon Cylinder is Z-aligned. We want visual to be up (Y).
-        // If we rotate body -90 deg X, Z becomes Y.
-        const q = new CANNON.Quaternion();
-        q.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
-        body.addShape(shape, new CANNON.Vec3(0, 0, 0), q);
-
+        body.addShape(shape);
         body.position.copy(position);
+
+        // Tumbamos el cuerpo físico
+        const qBody = new CANNON.Quaternion();
+        qBody.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), Math.PI / 2);
+        body.quaternion.copy(qBody);
+
         if (velocity) {
             body.velocity.copy(velocity);
         }

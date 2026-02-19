@@ -10,7 +10,6 @@ export class GameView {
         this.ui = new UIView();
 
         this.scene = new THREE.Scene();
-        // this.scene.background = new THREE.Color('#5c94fc'); // Commented out to allow CSS background
 
         this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
         this.camera.position.set(0, 15, 13);
@@ -31,34 +30,34 @@ export class GameView {
 
         this.coinMaterial = new THREE.MeshStandardMaterial({
             color: 0xffd700,
-            metalness: 0.1, // Almost non-metallic (plastic/cartoon look)
-            roughness: 0.7, // Rough surface to diffuse light
+            metalness: 0.1,
+            roughness: 0.7,
             emissive: 0x221100,
-            emissiveIntensity: 0.2 // Slight glow to ensure visibility
+            emissiveIntensity: 0.2
         });
+
+        // Materiales para el barril geométrico
+        this.barrelWoodMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.8 }); // Marrón madera
+        this.barrelMetalMaterial = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.7, roughness: 0.3 }); // Gris metálico
 
         this.setupLights();
         this.createCabinet();
 
-        // --- CARGA DEL MODELO ---
         this.loader = new ColladaLoader();
         this.coinModelTemplate = new THREE.Group();
 
-        // IMPORTANTE: Asegúrate de que esta ruta es la correcta en tu proyecto
         this.loader.load('assets/images/coin.dae', (collada) => {
             const model = collada.scene;
 
-            // 1. Material corregido con los registros de color del usuario
             const shinyGoldMaterial = new THREE.MeshStandardMaterial({
-                color: new THREE.Color(255 / 255, 255 / 255, 20 / 255), // Color Register 1: Golden Yellow
-                emissive: new THREE.Color(173 / 255, 137 / 255, 16 / 255), // Color Register 2: Darker Gold/Orange for glow
+                color: new THREE.Color(255 / 255, 255 / 255, 20 / 255),
+                emissive: new THREE.Color(173 / 255, 137 / 255, 16 / 255),
                 emissiveIntensity: 0.4,
-                metalness: 0.8, // Increased for shiny metallic look
-                roughness: 0.2, // Smoother surface
+                metalness: 0.8,
+                roughness: 0.2,
                 side: THREE.DoubleSide
             });
 
-            // 2. Extraemos las piezas
             model.traverse((child) => {
                 if (child.isMesh || child.isSkinnedMesh) {
                     const cleanGeom = child.geometry.clone();
@@ -74,8 +73,6 @@ export class GameView {
 
                     this.coinModelTemplate.add(mesh);
 
-                    // --- NUEVO: Borde negro (outline) ---
-                    // Usamos EdgesGeometry para detectar bordes afilados (>15 grados)
                     const edges = new THREE.EdgesGeometry(cleanGeom, 15);
                     const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }));
 
@@ -87,7 +84,6 @@ export class GameView {
                 }
             });
 
-            // 3. Centrado y auto-escalado
             const box = new THREE.Box3().setFromObject(this.coinModelTemplate);
             const center = box.getCenter(new THREE.Vector3());
             const size = box.getSize(new THREE.Vector3());
@@ -100,12 +96,8 @@ export class GameView {
             const exactScale = 1.2 / maxDimension;
 
             this.coinModelTemplate.scale.set(exactScale, exactScale, exactScale);
-
-            // Revert rotation to 0 since the model is likely already upright (Z-axis)
-            // and physics body is also X-rotated to be Z-axis.
             this.coinModelTemplate.rotation.set(0, 0, 0);
 
-            // 4. Reemplazo de las monedas iniciales
             this.pendingCoins.forEach(group => {
                 group.clear();
                 group.add(this.coinModelTemplate.clone());
@@ -134,17 +126,13 @@ export class GameView {
     createCabinet() {
         const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xc84c0c, roughness: 0.8, metalness: 0.1 });
 
-        // --- MODIFICACIÓN: Textura BlockBrick para paredes y pusher ---
         const textureLoader = new THREE.TextureLoader();
         const brickTexture = textureLoader.load('assets/images/BlockBrick2D.png');
-
-        // Configuramos la textura para que se repita correctamente
         brickTexture.wrapS = THREE.RepeatWrapping;
         brickTexture.wrapT = THREE.RepeatWrapping;
-        brickTexture.repeat.set(1, 1); // Empezamos con 1x1, se ajustará si es necesario
-        brickTexture.magFilter = THREE.NearestFilter; // Pixel art crispy look
+        brickTexture.repeat.set(1, 1);
+        brickTexture.magFilter = THREE.NearestFilter;
 
-        // --- PROCERURAL TEXTURE GENERATION ---
         const grassTexture = this.createProceduralGrassTexture();
 
         const wallMaterial = new THREE.MeshStandardMaterial({
@@ -153,8 +141,6 @@ export class GameView {
             metalness: 0.1
         });
 
-        // Clonamos la textura para el pusher si queremos diferentes settings (opcional)
-        // o usamos la misma. Para el pusher que es ancho, el mapping dependera de la UV.
         const grassMaterial = new THREE.MeshStandardMaterial({
             map: grassTexture,
             roughness: 0.8,
@@ -168,16 +154,12 @@ export class GameView {
         floor.receiveShadow = true;
         this.scene.add(floor);
 
-        // --- REFACTOR: Walls as Blocks ---
         const blockGeo = new THREE.BoxGeometry(1, 1, 1);
 
-        // Helper function to create a blocky structure
         const createBlockStructure = (width, height, depth, material, positionOffset) => {
             const group = new THREE.Group();
             group.position.copy(positionOffset);
 
-            // Calculate starting positions to center the group around (0,0,0) locally
-            // or we build it from 0 and move group. Let's build centered.
             const startX = -(width - 1) / 2;
             const startY = -(height - 1) / 2;
             const startZ = -(depth - 1) / 2;
@@ -200,20 +182,12 @@ export class GameView {
             return group;
         };
 
-        // Left Wall: 1x4x12 blocks
-        // Original pos: -5.5, 2, 1
         const leftWallGroup = createBlockStructure(1, 4, 12, wallMaterial, new THREE.Vector3(-5.5, 2, 1));
         this.scene.add(leftWallGroup);
 
-        // Right Wall: 1x4x12 blocks
-        // Original pos: 5.5, 2, 1
         const rightWallGroup = createBlockStructure(1, 4, 12, wallMaterial, new THREE.Vector3(5.5, 2, 1));
         this.scene.add(rightWallGroup);
 
-        // Pusher: 10x1x10 blocks
-        // Original pos: 0, 0.45, -4
-        // Note: Pusher needs to be accessible via this.pusherMesh for movement updates
-        // Since updatePusherPosition modifies this.pusherMesh.position.z, using a Group works perfectly.
         this.pusherMesh = createBlockStructure(10, 1, 10, grassMaterial, new THREE.Vector3(0, 0.45, -4));
         this.scene.add(this.pusherMesh);
 
@@ -222,12 +196,10 @@ export class GameView {
         sweeperMesh.position.set(0, 2, -4.5);
         sweeperMesh.castShadow = true;
         sweeperMesh.receiveShadow = true;
-        sweeperMesh.receiveShadow = true;
         this.scene.add(sweeperMesh);
 
         this.loadMarioModels();
         this.loadKongModel();
-        this.loadBarrelModel();
     }
 
     loadMarioModels() {
@@ -241,19 +213,16 @@ export class GameView {
             objLoader.setPath('assets/images/Mario/');
             objLoader.load('mariotroph.obj', (object) => {
 
-                // Calculate bounding box and scale
                 const box = new THREE.Box3().setFromObject(object);
                 const size = box.getSize(new THREE.Vector3());
                 const maxDim = Math.max(size.x, size.y, size.z);
-                const scale = 2.0 / maxDim; // Adjust height to approx 2 units
+                const scale = 2.0 / maxDim;
 
                 object.scale.set(scale, scale, scale);
 
-                // Mario Left
                 const marioLeft = object.clone();
-                // Wall top is at y=4 approx (2 + 2/2 + 1/2? No. Wall is 4 units high, center at y=2. So top is y=4)
                 marioLeft.position.set(-5.5, 4, 1);
-                marioLeft.rotation.y = Math.PI / 2; // Face center
+                marioLeft.rotation.y = Math.PI / 2;
 
                 marioLeft.traverse((child) => {
                     if (child.isMesh) {
@@ -264,10 +233,9 @@ export class GameView {
 
                 this.scene.add(marioLeft);
 
-                // Mario Right
                 const marioRight = object.clone();
                 marioRight.position.set(5.5, 4, 1);
-                marioRight.rotation.y = -Math.PI / 2; // Face center
+                marioRight.rotation.y = -Math.PI / 2;
 
                 marioRight.traverse((child) => {
                     if (child.isMesh) {
@@ -285,53 +253,30 @@ export class GameView {
     }
 
     loadKongModel() {
-        // Use the existing ColladaLoader instance or create new one if needed
-        // The existing this.loader is a ColladaLoader
         if (!this.loader) this.loader = new ColladaLoader();
 
         this.loader.load('assets/images/kong/pc12_DK_piece_m4_pc12_piece_m4.dae', (collada) => {
             const kongModel = collada.scene;
 
-            // Scale and Position
             const box = new THREE.Box3().setFromObject(kongModel);
             const size = box.getSize(new THREE.Vector3());
             const maxDim = Math.max(size.x, size.y, size.z);
-            const scale = 3.5 / maxDim; // Make it fairly large, e.g. 3.5 units
+            const scale = 3.5 / maxDim;
 
             kongModel.scale.set(scale, scale, scale);
-
-            // Re-calculate box after scaling to get world bounds (assuming it was at 0,0,0)
-            // Force update matrix just in case
             kongModel.updateMatrixWorld();
             const scaledBox = new THREE.Box3().setFromObject(kongModel);
 
-            // Calculate offset to place bottom at y=3
-            // Since we haven't set position yet (default 0,0,0), scaledBox.min.y is offset from origin
-            // newY + scaledBox.min.y = 3
             const yOffset = 3 - scaledBox.min.y - 0.05;
-
-            // Calculate offset to place front at z=-0.5 (minus margin)
-            // newZ + scaledBox.max.z = -1.0
             const zOffset = -1.0 - scaledBox.max.z;
 
             kongModel.position.set(0, yOffset, zOffset);
-
-            // Rotate to face camera. 
-            // Usually models face +Z or -Z. 
-            // If it faces +Z (defaults), and camera is at +Z, it looks at camera.
-            // If it faces -Z (away), we need rotate Y 180.
-            // Let's assume default orientation needs check. 
-            // Often game rips are Y-up, Z-forward. 
-            // I'll add a slight rotation if needed, but start with 0.
-            // Actually, let's rotate it to face somewhat forward-down if possible or just straight.
             kongModel.rotation.set(0, 0, 0);
 
             kongModel.traverse((child) => {
                 if (child.isMesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
-                    // Ensure texture is applied if it wasn't automatic
-                    // Collada usually handles it if relative path is correct
                 }
             });
 
@@ -342,55 +287,47 @@ export class GameView {
         });
     }
 
-
-    loadBarrelModel() {
-        if (!this.loader) this.loader = new ColladaLoader();
-
-        this.barrelModelTemplate = null; // Ensure it's null initially
-
-        this.loader.load('assets/images/DK Barrel/DKBarrel.dae', (collada) => {
-            const model = collada.scene;
-
-            // Normalize scale and center
-            const box = new THREE.Box3().setFromObject(model);
-            const size = box.getSize(new THREE.Vector3());
-            const maxDim = Math.max(size.x, size.y, size.z);
-            const scale = 3.0 / maxDim; // Adjust to 3 unit size roughly
-
-            model.scale.set(scale, scale, scale);
-
-            // Center geometry
-            const center = box.getCenter(new THREE.Vector3());
-            model.position.sub(center.multiplyScalar(scale)); // Apply scale to center offset
-
-            // Wrap in a group to handle origin easily
-            const group = new THREE.Group();
-            group.add(model);
-
-            this.barrelModelTemplate = group;
-            console.log("Barrel model loaded.");
-
-        }, undefined, (error) => {
-            console.error('An error occurred loading Barrel model:', error);
-        });
-    }
-
+    // --- NUEVA FUNCIÓN: Crea el barril geométrico ---
     createBarrelMesh(position, quaternion) {
-        if (!this.barrelModelTemplate) return null;
+        const barrelGroup = new THREE.Group();
 
-        const mesh = this.barrelModelTemplate.clone();
-        mesh.position.copy(position);
-        mesh.quaternion.copy(quaternion);
+        // Dimensiones del barril
+        const radius = 1.0;
+        const height = 2.5;
+        const segments = 16;
 
-        mesh.traverse((child) => {
-            if (child.isMesh) {
-                child.castShadow = true;
-                child.receiveShadow = true;
-            }
-        });
+        // Cuerpo principal (cilindro de madera)
+        const bodyGeo = new THREE.CylinderGeometry(radius, radius, height, segments);
+        const bodyMesh = new THREE.Mesh(bodyGeo, this.barrelWoodMaterial);
+        bodyMesh.castShadow = true;
+        bodyMesh.receiveShadow = true;
+        barrelGroup.add(bodyMesh);
 
-        this.scene.add(mesh);
-        return mesh;
+        // Anillos metálicos (toroides)
+        const ringRadius = radius + 0.05;
+        const tubeRadius = 0.08;
+        const ringGeo = new THREE.TorusGeometry(ringRadius, tubeRadius, 8, segments);
+
+        // Anillo superior
+        const ring1 = new THREE.Mesh(ringGeo, this.barrelMetalMaterial);
+        ring1.position.y = height * 0.25;
+        ring1.rotation.x = Math.PI / 2; // Tumbar el anillo
+        ring1.castShadow = true;
+        barrelGroup.add(ring1);
+
+        // Anillo inferior
+        const ring2 = new THREE.Mesh(ringGeo, this.barrelMetalMaterial);
+        ring2.position.y = -height * 0.25;
+        ring2.rotation.x = Math.PI / 2; // Tumbar el anillo
+        ring2.castShadow = true;
+        barrelGroup.add(ring2);
+
+        // Posicionar y rotar el grupo entero
+        barrelGroup.position.copy(position);
+        barrelGroup.quaternion.copy(quaternion);
+
+        this.scene.add(barrelGroup);
+        return barrelGroup;
     }
 
     removeBarrelMesh(mesh) {
@@ -400,22 +337,18 @@ export class GameView {
     }
 
     createProceduralGrassTexture() {
-        // Create a canvas to draw the pixel art texture
         const size = 64;
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
         const ctx = canvas.getContext('2d');
 
-        // 1. Fill background with Mario-style base green
         ctx.fillStyle = '#00a800';
         ctx.fillRect(0, 0, size, size);
 
-        // 2. Add pixel pattern details
-        const lightGreen = '#58d854'; // Highlights
-        const darkGreen = '#005000';  // Shadows
+        const lightGreen = '#58d854';
+        const darkGreen = '#005000';
 
-        // Draw simple pixel noise pattern
         for (let i = 0; i < 200; i++) {
             const x = Math.floor(Math.random() * size);
             const y = Math.floor(Math.random() * size);
@@ -426,12 +359,8 @@ export class GameView {
             ctx.fillRect(x, y, w, h);
         }
 
-        // 3. Add a "top border" effect to simulate grass tips (optional, but nice)
-        // Since we are tiling 1x1 blocks, a seamless pattern is better.
-        // Let's add cross-hatch or specific Mario ground pattern approximation
         ctx.fillStyle = '#000000';
         ctx.globalAlpha = 0.1;
-        // Scanlines/grid for texture
         for (let y = 0; y < size; y += 4) {
             ctx.fillRect(0, y, size, 1);
         }
@@ -440,7 +369,7 @@ export class GameView {
         const texture = new THREE.CanvasTexture(canvas);
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
-        texture.magFilter = THREE.NearestFilter; // Critical for pixel art look
+        texture.magFilter = THREE.NearestFilter;
         texture.minFilter = THREE.NearestFilter;
         texture.colorSpace = THREE.SRGBColorSpace;
 
@@ -474,15 +403,13 @@ export class GameView {
     createCardTexture(imageUrl) {
         const canvas = document.createElement('canvas');
         canvas.width = 512;
-        canvas.height = 768; // Ratio 1:1.5 para cartas ajustadas
+        canvas.height = 768;
 
         const ctx = canvas.getContext('2d');
 
-        // 1. Fill with bone/card color background
         ctx.fillStyle = '#fdf6e3';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // 2. Load and draw image
         const img = new Image();
         img.src = imageUrl;
 
@@ -490,9 +417,7 @@ export class GameView {
         texture.colorSpace = THREE.SRGBColorSpace;
         texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
 
-        // We need to wait for image to load to draw it
         img.onload = () => {
-            // Draw image covering the canvas (like object-fit: cover)
             const aspectCanvas = canvas.width / canvas.height;
             const aspectImg = img.width / img.height;
 
@@ -502,25 +427,16 @@ export class GameView {
             let offsetY = 0;
 
             if (aspectImg > aspectCanvas) {
-                // Image is wider than canvas
                 drawHeight = canvas.height;
                 drawWidth = drawHeight * aspectImg;
                 offsetX = -(drawWidth - canvas.width) / 2;
             } else {
-                // Image is taller than canvas
                 drawWidth = canvas.width;
                 drawHeight = drawWidth / aspectImg;
                 offsetY = -(drawHeight - canvas.height) / 2;
             }
 
             ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
-
-            // Add a border maybe? -> REMOVED as requested
-            // ctx.strokeStyle = '#d4c5a0';
-            // ctx.lineWidth = 10;
-            // ctx.strokeRect(0, 0, canvas.width, canvas.height);
-
-            texture.needUpdate = true; // Fix typo needsUpdate to needUpdate? No, standard ThreeJS texture is needsUpdate
             texture.needsUpdate = true;
         };
 
@@ -528,19 +444,10 @@ export class GameView {
     }
 
     createCardItemMesh(position, quaternion, imageUrl) {
-        // 1. Tamaño ajustado: Más estrecho y largo (Ancho 1.2, Grosor 0.16, Largo 1.8)
-        // Coincide con physics: 0.6 * 2, 0.08 * 2, 0.9 * 2
         const geometry = new THREE.BoxGeometry(1.2, 0.16, 1.8);
-
-        // 2. Use CanvasTexture
         const texture = this.createCardTexture(imageUrl);
 
-        // Canvas texture is usually upright. 
-        // Our BoxGeometry top face is oriented XZ.
-        // We need it to face "up" relative to the card's local space when it falls.
-        // Rotamos la textura -90 grados (PI/2) para que se alinee con el largo de la tarjeta (Eje Z)
         texture.center.set(0.5, 0.5);
-        // texture.rotation = Math.PI / 2; // Removed rotation to fix orientation
 
         const faceMaterial = new THREE.MeshStandardMaterial({
             map: texture,
@@ -548,21 +455,19 @@ export class GameView {
             metalness: 0.1
         });
 
-        // Color blanco/hueso para los bordes del cartón
         const edgeMaterial = new THREE.MeshStandardMaterial({
             color: 0xfdf6e3,
             roughness: 0.8,
             metalness: 0.1
         });
 
-        // Mapeo de materiales a las 6 caras del cubo
         const materials = [
-            edgeMaterial, // 0: derecha
-            edgeMaterial, // 1: izquierda
-            faceMaterial, // 2: arriba (cara principal)
-            faceMaterial, // 3: abajo (reverso)
-            edgeMaterial, // 4: frente
-            edgeMaterial  // 5: atrás
+            edgeMaterial,
+            edgeMaterial,
+            faceMaterial,
+            faceMaterial,
+            edgeMaterial,
+            edgeMaterial
         ];
 
         const mesh = new THREE.Mesh(geometry, materials);
@@ -578,7 +483,6 @@ export class GameView {
     removeItemMesh(mesh) {
         this.scene.remove(mesh);
         if (mesh.geometry) mesh.geometry.dispose();
-        // Si usamos múltiples materiales, hay que limpiar el array
         if (Array.isArray(mesh.material)) {
             mesh.material.forEach(mat => mat.dispose());
         } else if (mesh.material) {
