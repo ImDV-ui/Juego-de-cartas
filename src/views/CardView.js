@@ -7,7 +7,8 @@ export class CardView {
         this.container.style.top = '50%';
         this.container.style.transform = 'translateY(-50%)';
         this.container.style.display = 'grid';
-        this.container.style.gridTemplateRows = 'repeat(5, 140px)';
+        // Ajustado a 130px para coincidir con la nueva altura de las cartas
+        this.container.style.gridTemplateRows = 'repeat(5, 130px)';
         this.container.style.gridAutoFlow = 'column';
         this.container.style.gap = '10px';
         this.container.style.pointerEvents = 'none';
@@ -18,8 +19,11 @@ export class CardView {
         // 1. El Hueco (Slot)
         const slot = document.createElement('div');
         slot.className = 'card-slot';
-        slot.style.width = '100px';
-        slot.style.height = '140px';
+
+        // Cartas más gruesas/anchas (120px) y menos alargadas (130px)
+        slot.style.width = '120px';
+        slot.style.height = '130px';
+
         slot.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
         slot.style.border = '2px dashed rgba(255, 255, 255, 0.2)';
         slot.style.borderRadius = '12px';
@@ -36,7 +40,7 @@ export class CardView {
         card.style.top = '0';
         card.style.left = '0';
 
-        // --- CAMBIOS CLAVE PARA QUITAR MÁRGENES ---
+        // --- ESTILOS DE LA CARTA ---
         card.style.backgroundColor = 'transparent'; // Fondo transparente
         card.style.border = 'none'; // Sin borde
         card.style.borderRadius = '12px'; // Mantenemos las esquinas redondeadas
@@ -46,14 +50,19 @@ export class CardView {
         card.style.alignItems = 'center';
         card.style.justifyContent = 'center';
         card.style.userSelect = 'none';
-        card.style.boxShadow = '2px 6px 15px rgba(0,0,0,0.5)';
+
+        // Efecto de sombra doble para simular que son cartas/fichas más "gruesas" (efecto 3D)
+        card.style.boxShadow = '4px 6px 0px rgba(0,0,0,0.6), 2px 6px 15px rgba(0,0,0,0.4)';
+
         // Importante: overflow hidden para que la imagen no se salga de las esquinas redondeadas
         card.style.overflow = 'hidden';
 
         if (cardData.image) {
             card.style.backgroundImage = `url('${cardData.image}')`;
-            // 'cover' hace que la imagen llene TODO el espacio, recortando si es necesario
-            card.style.backgroundSize = 'cover';
+
+            // 'contain' ajusta la imagen para que se vea PERFECTA y ENTERA sin recortarse
+            card.style.backgroundSize = 'contain';
+
             card.style.backgroundPosition = 'center';
             card.style.backgroundRepeat = 'no-repeat';
             card.innerHTML = '';

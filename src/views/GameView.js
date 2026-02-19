@@ -298,7 +298,7 @@ export class GameView {
     createCardTexture(imageUrl) {
         const canvas = document.createElement('canvas');
         canvas.width = 512;
-        canvas.height = 1024; // Ratio 1:2 para cartas alargadas
+        canvas.height = 768; // Ratio 1:1.5 para cartas ajustadas
 
         const ctx = canvas.getContext('2d');
 
@@ -352,9 +352,9 @@ export class GameView {
     }
 
     createCardItemMesh(position, quaternion, imageUrl) {
-        // 1. Tamaño ajustado: Más estrecho y largo (Ancho 1.2, Grosor 0.05, Largo 3.2)
-        // Coincide con physics: 0.6 * 2, 0.025 * 2, 1.6 * 2
-        const geometry = new THREE.BoxGeometry(1.2, 0.05, 3.2);
+        // 1. Tamaño ajustado: Más estrecho y largo (Ancho 1.2, Grosor 0.16, Largo 1.8)
+        // Coincide con physics: 0.6 * 2, 0.08 * 2, 0.9 * 2
+        const geometry = new THREE.BoxGeometry(1.2, 0.16, 1.8);
 
         // 2. Use CanvasTexture
         const texture = this.createCardTexture(imageUrl);
@@ -364,7 +364,7 @@ export class GameView {
         // We need it to face "up" relative to the card's local space when it falls.
         // Rotamos la textura -90 grados (PI/2) para que se alinee con el largo de la tarjeta (Eje Z)
         texture.center.set(0.5, 0.5);
-        texture.rotation = Math.PI / 2;
+        // texture.rotation = Math.PI / 2; // Removed rotation to fix orientation
 
         const faceMaterial = new THREE.MeshStandardMaterial({
             map: texture,
