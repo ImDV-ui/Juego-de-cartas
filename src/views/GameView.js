@@ -298,7 +298,7 @@ export class GameView {
     createCardTexture(imageUrl) {
         const canvas = document.createElement('canvas');
         canvas.width = 512;
-        canvas.height = 750; // Approximating 1.5 x 2.2 ratio
+        canvas.height = 1024; // Ratio 1:2 para cartas alargadas
 
         const ctx = canvas.getContext('2d');
 
@@ -339,10 +339,10 @@ export class GameView {
 
             ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
 
-            // Add a border maybe?
-            ctx.strokeStyle = '#d4c5a0';
-            ctx.lineWidth = 10;
-            ctx.strokeRect(0, 0, canvas.width, canvas.height);
+            // Add a border maybe? -> REMOVED as requested
+            // ctx.strokeStyle = '#d4c5a0';
+            // ctx.lineWidth = 10;
+            // ctx.strokeRect(0, 0, canvas.width, canvas.height);
 
             texture.needUpdate = true; // Fix typo needsUpdate to needUpdate? No, standard ThreeJS texture is needsUpdate
             texture.needsUpdate = true;
@@ -352,8 +352,9 @@ export class GameView {
     }
 
     createCardItemMesh(position, quaternion, imageUrl) {
-        // 1. Tamaño ajustado: Más pequeño y más grueso (Ancho 1.5, Grosor 0.15, Largo 2.2)
-        const geometry = new THREE.BoxGeometry(1.5, 0.15, 2.2);
+        // 1. Tamaño ajustado: Más estrecho y largo (Ancho 1.2, Grosor 0.05, Largo 3.2)
+        // Coincide con physics: 0.6 * 2, 0.025 * 2, 1.6 * 2
+        const geometry = new THREE.BoxGeometry(1.2, 0.05, 3.2);
 
         // 2. Use CanvasTexture
         const texture = this.createCardTexture(imageUrl);
@@ -361,11 +362,9 @@ export class GameView {
         // Canvas texture is usually upright. 
         // Our BoxGeometry top face is oriented XZ.
         // We need it to face "up" relative to the card's local space when it falls.
-        // The rotation -Math.PI / 2 used before was for standard textures.
-        // Let's try standard mapping first. If it's rotated 90deg, we fix it.
-        // Usually, default UVs for Box Top face: (0,1) at top-left?
+        // Rotamos la textura -90 grados (PI/2) para que se alinee con el largo de la tarjeta (Eje Z)
         texture.center.set(0.5, 0.5);
-        texture.rotation = -Math.PI / 2; // Keep rotation for now as geometry hasn't changed
+        texture.rotation = Math.PI / 2;
 
         const faceMaterial = new THREE.MeshStandardMaterial({
             map: texture,
