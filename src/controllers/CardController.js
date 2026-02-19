@@ -5,6 +5,10 @@ export class CardController {
         this.gameController = gameController;
         this.view = new CardView();
         this.cards = [];
+        this.draggedCard = null;
+        // Variables para guardar dónde hemos agarrado la carta exactamente
+        this.dragOffsetX = 0;
+        this.dragOffsetY = 0;
 
         this.addCard({
             id: 'bonus_100',
@@ -21,8 +25,6 @@ export class CardController {
             type: 'DOUBLE_MONEY',
             image: 'assets/images/x2 de dinero.png'
         });
-
-
     }
 
     addCard(cardData) {
@@ -39,11 +41,30 @@ export class CardController {
         if (e.type === 'touchstart') e.preventDefault();
 
         this.draggedCard = cardObj;
+        this.originalSlot = this.draggedCard.element.parentNode; // Guardamos el slot original
+
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        // 1. Obtener rect para calcular offset y guardar dimensiones
+        const rect = this.draggedCard.element.getBoundingClientRect();
+        this.dragOffsetX = clientX - rect.left;
+        this.dragOffsetY = clientY - rect.top;
+
+        // 2. Fijar dimensiones explícitas antes de mover al body para evitar resize
+        this.draggedCard.element.style.width = `${rect.width}px`;
+        this.draggedCard.element.style.height = `${rect.height}px`;
+
+        // 3. Mover al body para romper el contexto de transform del contenedor
+        document.body.appendChild(this.draggedCard.element);
+
+        // 4. Estilos para el arrastre
         this.draggedCard.element.style.position = 'fixed';
         this.draggedCard.element.style.zIndex = '1000';
         this.draggedCard.element.style.cursor = 'grabbing';
-        this.draggedCard.element.style.transform = 'scale(1.1)';
+        this.draggedCard.element.style.boxShadow = '0 10px 20px rgba(0,0,0,0.5)';
 
+        // 5. Posicionar inicialmente
         this.moveCardToInput(e);
 
         this.boundMove = (ev) => this.onDragMove(ev);
@@ -65,9 +86,11 @@ export class CardController {
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-        this.draggedCard.element.style.left = `${clientX}px`;
-        this.draggedCard.element.style.top = `${clientY}px`;
-        this.draggedCard.element.style.bottom = 'auto';
+        const newLeft = clientX - this.dragOffsetX;
+        const newTop = clientY - this.dragOffsetY;
+
+        this.draggedCard.element.style.left = `${newLeft}px`;
+        this.draggedCard.element.style.top = `${newTop}px`;
     }
 
     onDragEnd(e) {
@@ -78,23 +101,39 @@ export class CardController {
         window.removeEventListener('mouseup', this.boundUp);
         window.removeEventListener('touchend', this.boundUp);
 
-        const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+        const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
 
-        if (clientY < window.innerHeight * 0.7) {
+        // Zona de drop: > 25% del ancho (lado derecho)
+        if (clientX > window.innerWidth * 0.25) {
             this.playCardEffect(this.draggedCard.data);
-            this.view.removeCard(this.draggedCard.element);
+
+            // Eliminar elemento arrastrado (que está en body)
+            if (this.draggedCard.element.parentNode) {
+                this.draggedCard.element.parentNode.removeChild(this.draggedCard.element);
+            }
+            // Eliminar el slot original usando la vista
+            this.view.removeSlot(this.originalSlot);
+
             this.cards = this.cards.filter(c => c !== this.draggedCard);
         } else {
-            this.draggedCard.element.style.position = '';
-            this.draggedCard.element.style.left = '';
-            this.draggedCard.element.style.top = '';
-            this.draggedCard.element.style.bottom = '20px';
-            this.draggedCard.element.style.transform = 'translateX(-50%)';
+            // Cancelar: Devolver al slot original
+            this.originalSlot.appendChild(this.draggedCard.element);
+
+            // Resetear estilos
+            this.draggedCard.element.style.position = 'absolute';
+            this.draggedCard.element.style.left = '0';
+            this.draggedCard.element.style.top = '0';
+            this.draggedCard.element.style.width = '100%';
+            this.draggedCard.element.style.height = '100%';
+            this.draggedCard.element.style.zIndex = '';
+            this.draggedCard.element.style.boxShadow = '2px 6px 15px rgba(0,0,0,0.5)';
             this.draggedCard.element.style.cursor = 'grab';
-            this.view.container.appendChild(this.draggedCard.element);
         }
 
         this.draggedCard = null;
+        this.originalSlot = null;
+        this.dragOffsetX = 0;
+        this.dragOffsetY = 0;
     }
 
     playCardEffect(cardData) {
@@ -102,7 +141,6 @@ export class CardController {
 
         if (cardData.type === 'COIN_SHOWER') {
             if (this.gameController && this.gameController.coinController) {
-
                 for (let i = 0; i < 30; i++) {
                     setTimeout(() => {
                         this.gameController.coinController.spawnCoin(
@@ -117,15 +155,15 @@ export class CardController {
             if (this.gameController && this.gameController.view && this.gameController.view.ui) {
                 this.gameController.view.ui.multiplier = 2;
                 console.log("Multiplier set to x2");
-
-                // Visual feedback
-                this.gameController.view.ui.moneyElement.style.color = '#ffff00'; // Yellow for multiplier
+                this.gameController.view.ui.moneyElement.style.color = '#ffff00';
 
                 setTimeout(() => {
-                    this.gameController.view.ui.multiplier = 1;
-                    this.gameController.view.ui.moneyElement.style.color = '#00ff00'; // Revert to green
-                    console.log("Multiplier reset to x1");
-                }, 120000); // 2 minutes
+                    if (this.gameController.view.ui) {
+                        this.gameController.view.ui.multiplier = 1;
+                        this.gameController.view.ui.moneyElement.style.color = '#00ff00';
+                        console.log("Multiplier reset to x1");
+                    }
+                }, 120000);
             }
         }
     }

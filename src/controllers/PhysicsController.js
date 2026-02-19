@@ -75,9 +75,7 @@ export class PhysicsController {
             material: this.materials.coin,
             linearDamping: 0.1,
             angularDamping: 0.5,
-            allowSleep: true,
-            sleepSpeedLimit: 0.1,
-            sleepTimeLimit: 0.5
+
         });
 
         const q = new CANNON.Quaternion();
