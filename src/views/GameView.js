@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { ColladaLoader } from 'three/addons/loaders/ColladaLoader.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 import { UIView } from './UIView.js';
 
 export class GameView {
@@ -220,7 +222,181 @@ export class GameView {
         sweeperMesh.position.set(0, 2, -4.5);
         sweeperMesh.castShadow = true;
         sweeperMesh.receiveShadow = true;
+        sweeperMesh.receiveShadow = true;
         this.scene.add(sweeperMesh);
+
+        this.loadMarioModels();
+        this.loadKongModel();
+        this.loadBarrelModel();
+    }
+
+    loadMarioModels() {
+        const mtlLoader = new MTLLoader();
+        mtlLoader.setPath('assets/images/Mario/');
+        mtlLoader.load('mariotroph.mtl', (materials) => {
+            materials.preload();
+
+            const objLoader = new OBJLoader();
+            objLoader.setMaterials(materials);
+            objLoader.setPath('assets/images/Mario/');
+            objLoader.load('mariotroph.obj', (object) => {
+
+                // Calculate bounding box and scale
+                const box = new THREE.Box3().setFromObject(object);
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scale = 2.0 / maxDim; // Adjust height to approx 2 units
+
+                object.scale.set(scale, scale, scale);
+
+                // Mario Left
+                const marioLeft = object.clone();
+                // Wall top is at y=4 approx (2 + 2/2 + 1/2? No. Wall is 4 units high, center at y=2. So top is y=4)
+                marioLeft.position.set(-5.5, 4, 1);
+                marioLeft.rotation.y = Math.PI / 2; // Face center
+
+                marioLeft.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+
+                this.scene.add(marioLeft);
+
+                // Mario Right
+                const marioRight = object.clone();
+                marioRight.position.set(5.5, 4, 1);
+                marioRight.rotation.y = -Math.PI / 2; // Face center
+
+                marioRight.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+
+                this.scene.add(marioRight);
+
+            }, undefined, (error) => {
+                console.error('An error occurred loading Mario model:', error);
+            });
+        });
+    }
+
+    loadKongModel() {
+        // Use the existing ColladaLoader instance or create new one if needed
+        // The existing this.loader is a ColladaLoader
+        if (!this.loader) this.loader = new ColladaLoader();
+
+        this.loader.load('assets/images/kong/pc12_DK_piece_m4_pc12_piece_m4.dae', (collada) => {
+            const kongModel = collada.scene;
+
+            // Scale and Position
+            const box = new THREE.Box3().setFromObject(kongModel);
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const scale = 3.5 / maxDim; // Make it fairly large, e.g. 3.5 units
+
+            kongModel.scale.set(scale, scale, scale);
+
+            // Re-calculate box after scaling to get world bounds (assuming it was at 0,0,0)
+            // Force update matrix just in case
+            kongModel.updateMatrixWorld();
+            const scaledBox = new THREE.Box3().setFromObject(kongModel);
+
+            // Calculate offset to place bottom at y=3
+            // Since we haven't set position yet (default 0,0,0), scaledBox.min.y is offset from origin
+            // newY + scaledBox.min.y = 3
+            const yOffset = 3 - scaledBox.min.y - 0.05;
+
+            // Calculate offset to place front at z=-0.5 (minus margin)
+            // newZ + scaledBox.max.z = -1.0
+            const zOffset = -1.0 - scaledBox.max.z;
+
+            kongModel.position.set(0, yOffset, zOffset);
+
+            // Rotate to face camera. 
+            // Usually models face +Z or -Z. 
+            // If it faces +Z (defaults), and camera is at +Z, it looks at camera.
+            // If it faces -Z (away), we need rotate Y 180.
+            // Let's assume default orientation needs check. 
+            // Often game rips are Y-up, Z-forward. 
+            // I'll add a slight rotation if needed, but start with 0.
+            // Actually, let's rotate it to face somewhat forward-down if possible or just straight.
+            kongModel.rotation.set(0, 0, 0);
+
+            kongModel.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                    // Ensure texture is applied if it wasn't automatic
+                    // Collada usually handles it if relative path is correct
+                }
+            });
+
+            this.scene.add(kongModel);
+
+        }, undefined, (error) => {
+            console.error('An error occurred loading Kong model:', error);
+        });
+    }
+
+
+    loadBarrelModel() {
+        if (!this.loader) this.loader = new ColladaLoader();
+
+        this.barrelModelTemplate = null; // Ensure it's null initially
+
+        this.loader.load('assets/images/DK Barrel/DKBarrel.dae', (collada) => {
+            const model = collada.scene;
+
+            // Normalize scale and center
+            const box = new THREE.Box3().setFromObject(model);
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const scale = 3.0 / maxDim; // Adjust to 3 unit size roughly
+
+            model.scale.set(scale, scale, scale);
+
+            // Center geometry
+            const center = box.getCenter(new THREE.Vector3());
+            model.position.sub(center.multiplyScalar(scale)); // Apply scale to center offset
+
+            // Wrap in a group to handle origin easily
+            const group = new THREE.Group();
+            group.add(model);
+
+            this.barrelModelTemplate = group;
+            console.log("Barrel model loaded.");
+
+        }, undefined, (error) => {
+            console.error('An error occurred loading Barrel model:', error);
+        });
+    }
+
+    createBarrelMesh(position, quaternion) {
+        if (!this.barrelModelTemplate) return null;
+
+        const mesh = this.barrelModelTemplate.clone();
+        mesh.position.copy(position);
+        mesh.quaternion.copy(quaternion);
+
+        mesh.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+
+        this.scene.add(mesh);
+        return mesh;
+    }
+
+    removeBarrelMesh(mesh) {
+        if (mesh) {
+            this.scene.remove(mesh);
+        }
     }
 
     createProceduralGrassTexture() {

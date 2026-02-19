@@ -109,6 +109,33 @@ export class PhysicsController {
         return body;
     }
 
+    createBarrel(position, velocity) {
+        // Barrel shape: Cylinder approx radius 1.05 and height 3.0 (3x original 0.35/1.0)
+        const shape = new CANNON.Cylinder(1.05, 1.05, 3.0, 16);
+        const body = new CANNON.Body({
+            mass: 50, // Much heavier to crush coins
+            material: this.materials.coin,
+            linearDamping: 0.1,
+            angularDamping: 0.5,
+            allowSleep: false
+        });
+
+        // Rotate cylinder to align with Y axis in Three.js terms (if needed)
+        // Cannon Cylinder is Z-aligned. We want visual to be up (Y).
+        // If we rotate body -90 deg X, Z becomes Y.
+        const q = new CANNON.Quaternion();
+        q.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+        body.addShape(shape, new CANNON.Vec3(0, 0, 0), q);
+
+        body.position.copy(position);
+        if (velocity) {
+            body.velocity.copy(velocity);
+        }
+
+        this.world.addBody(body);
+        return body;
+    }
+
     setPusherPosition(z) {
         if (this.pusherBody) {
             this.pusherBody.position.z = z;

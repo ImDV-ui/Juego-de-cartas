@@ -30,8 +30,14 @@ export class GameController {
         this.cardDropTimer = 0;
         this.nextCardDropTime = 10 + Math.random() * 110; // Initial random time
         this.cardItems = [];
+        this.barrels = [];
 
         this.spawnCardItem();
+
+        // Throw barrel after a short delay to ensure assets loaded
+        setTimeout(() => {
+            this.spawnBarrel();
+        }, 2000);
     }
 
     update(deltaTime) {
@@ -77,6 +83,20 @@ export class GameController {
                 this.cardItems.splice(i, 1);
             }
         }
+
+        // --- Barrel Logic ---
+        for (let i = this.barrels.length - 1; i >= 0; i--) {
+            const item = this.barrels[i];
+            item.mesh.position.copy(item.body.position);
+            item.mesh.quaternion.copy(item.body.quaternion);
+
+            // Remove if falls
+            if (item.body.position.y < -5) {
+                this.physics.world.removeBody(item.body);
+                this.view.removeBarrelMesh(item.mesh);
+                this.barrels.splice(i, 1);
+            }
+        }
     }
 
     spawnCardItem() {
@@ -114,6 +134,42 @@ export class GameController {
 
         // Guardamos la información de la carta junto al objeto
         this.cardItems.push({ body, mesh, cardData: randomCard });
+    }
+
+    spawnBarrel() {
+        // Kong Position: 0, 3, -4 (center of platform).
+        // Spawn slightly in front and higher for larger barrel: 0, 7, -3
+        const position = new CANNON.Vec3(0, 7, -3);
+
+        // Velocity: Throw towards +Z (forward) and slightly up
+        // Target: Center of coins approx 0, 0, 0
+        const velocity = new CANNON.Vec3(0, 5, 8); // Stronger throw
+
+        const body = this.physics.createBarrel(position, velocity);
+
+        // Visual Mesh
+        // Body quaternion is rotated -90 X. 
+        // We need mesh to match.
+        // If mesh is upright barrel, and we rotate -90 X, it points to camera.
+        // Wait, body rotation is for the SHAPE. Body itself has quaternion.
+        // In createBarrel, we added shape with local rotation. Body quaternion is identity (or set from velocity? no).
+        // So body.quaternion is identity initially.
+        // If we copy body quat to mesh, mesh is upright.
+        // But shape is rotated inside body.
+        // So physical cylinder is horizontal (Z-axis) rotated to vertical (Y-axis).
+        // Mesh should be vertical. So copying identity quat works if mesh is upright.
+        // Collada models are usually Y-up.
+
+        const mesh = this.view.createBarrelMesh(body.position, body.quaternion);
+
+        if (mesh) {
+            this.barrels.push({ body, mesh });
+        } else {
+            // If mesh not loaded yet, maybe remove body or retry?
+            // specific logic: remove body to avoid invisible physics
+            this.physics.world.removeBody(body);
+            console.log("Barrel mesh not loaded yet, skipping spawn.");
+        }
     }
 
     render() {
