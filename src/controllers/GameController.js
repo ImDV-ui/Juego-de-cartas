@@ -11,43 +11,44 @@ export class GameController {
         this.physics = new PhysicsController();
         this.data = new GameData();
 
-        // Pass physics and view to CoinController for 3D logic
         this.coinController = new CoinController(this.physics, this.view);
         this.cardController = new CardController();
         this.inputController = new InputController();
 
-        // Connect Input to Game Actions
-        this.inputController.onDropCoin = (x) => {
-            // Drop a coin at X position, height 4
-            // Z updated to -2 (Further forward / closer to camera) to drop ON the pusher reliably 
-            // but not "too far back".
-            this.coinController.spawnCoin(x, 4, -2);
-        };
-
         this.pusherTime = 0;
+
+        // --- SISTEMA DE CLIC PARA SOLTAR MONEDAS ---
+        // --- SISTEMA DE CLIC PARA SOLTAR MONEDAS ---
+        this.inputController.onDrop((normalizedX) => {
+            // Check if user has money
+            if (this.view.ui.money > 0) {
+                // Deduct cost
+                this.view.ui.updateMoney(-1);
+
+                // La mesa mide 10 de ancho (de -5 a 5). 
+                const dropX = normalizedX * 4.5;
+
+                // Soltamos la moneda
+                this.coinController.spawnCoin(dropX, 4, 2.5);
+            }
+        });
     }
 
     update(deltaTime) {
-        // Physics update
         this.physics.update(deltaTime);
 
-        // Pusher Animation Logic (Simple Sine Wave)
-        this.pusherTime += deltaTime;
-        const pusherZ = -2 + Math.sin(this.pusherTime) * 2; // Oscillate between -4 and 0 roughly
+        // Movimiento de la barrera (Oscila entre Z = -4.5 y Z = -1.5)
+        this.pusherTime += deltaTime * 1.5;
+        const pusherZ = -3 + Math.sin(this.pusherTime) * 1.5;
 
-        // Sync Physics Body
         this.physics.setPusherPosition(pusherZ);
-
-        // Sync Visual Mesh
         this.view.updatePusherPosition(pusherZ);
 
-        // Core updates
         this.coinController.update(deltaTime);
         this.cardController.update(deltaTime);
     }
 
     render() {
-        // Render logic
         this.view.render();
         this.coinController.render();
         this.cardController.render();

@@ -4,40 +4,34 @@ export class CoinController {
     constructor(physicsController, gameView) {
         this.physics = physicsController;
         this.view = gameView;
-        this.coins = []; // Objects { body, mesh }
+        this.coins = [];
 
-        // Debug: Spawn some initial coins
         this.spawnInitialCoins();
     }
 
     spawnInitialCoins() {
-        // Spawn many coins to fill the board
-        for (let i = 0; i < 150; i++) {
+        for (let i = 0; i < 30; i++) {
+            // Spawnear las monedas en el borde delantero de la barrera
+            // Z está entre +2 y +4 para que caigan perfectamente en el área de juego
             this.spawnCoin(
-                (Math.random() - 0.5) * 8, // Random X (-4 to 4)
-                2 + Math.random() * 5,     // Drop height (staggered)
-                // Spawn Z: mostly in the "pushable" area (-2 to 4)
-                // Avoid spawning too far back where the pusher might overlap on start
-                -2 + Math.random() * 6
+                (Math.random() - 0.5) * 8,
+                3 + Math.random() * 2,
+                2 + (Math.random() * 2)
             );
         }
     }
 
     spawnCoin(x, y, z) {
         const position = new CANNON.Vec3(x, y, z);
-        const radius = 0.3; // Match visual radius
+        const radius = 0.3;
 
-        // Create Physics Body
         const body = this.physics.createCoin(radius, position);
-
-        // Create Visual Mesh
         const mesh = this.view.createCoinMesh(body.position, body.quaternion);
 
         this.coins.push({ body, mesh });
     }
 
     update(deltaTime) {
-        // Sync Visuals with Physics
         for (let i = this.coins.length - 1; i >= 0; i--) {
             const coin = this.coins[i];
 
@@ -47,15 +41,15 @@ export class CoinController {
             // Check if coin fell off bounds (Score logic)
             if (coin.body.position.y < -5) {
                 // Determine if it was a good fall (Front) or bad fall (Sides)
-                // Front edge is roughly Z > 5. Side edges are X < -5 or X > 5.
+                // Front edge is roughly Z > 5.
 
                 if (coin.body.position.z > 5) {
-                    // Good drop! Front edge.
-                    this.view.ui.updateScore(10);
+                    // Good drop! Front edge. 1 Point per coin.
+                    this.view.ui.updateMoney(1);
                 } else {
-                    // Side drop - maybe less points or zero?
-                    // For now, let's just count all drops as score to be satisfying
-                    this.view.ui.updateScore(1);
+                    // Side drop - 0 points? Or maybe also 1 point? 
+                    // User asked for "each coin one point", implies all drops.
+                    this.view.ui.updateMoney(1);
                 }
 
                 // Remove coin from physics and scene
@@ -65,17 +59,11 @@ export class CoinController {
                 // Remove from array
                 this.coins.splice(i, 1);
 
-                // Respawn a new coin at top to keep the fun going (Infinite mode)
-                this.spawnCoin(
-                    (Math.random() - 0.5) * 8,
-                    4,
-                    (Math.random() - 0.5) * 4 - 2
-                );
+                // No respawn - coins are finite
             }
         }
     }
 
     render() {
-        // Render handled by GameView, but we can do custom effects here
     }
 }

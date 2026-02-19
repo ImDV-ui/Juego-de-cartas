@@ -1,7 +1,6 @@
 export class UIView {
     constructor() {
-        this.score = 0;
-        this.coins = 50; // Initial coins available to drop (future feature)
+        this.money = 50; // Single currency system: Money
 
         this.createUI();
     }
@@ -20,45 +19,39 @@ export class UIView {
         this.container.style.textShadow = '2px 2px 0 #000';
         document.body.appendChild(this.container);
 
-        // Score Board
-        this.scoreElement = document.createElement('div');
-        this.scoreElement.style.position = 'absolute';
-        this.scoreElement.style.top = '20px';
-        this.scoreElement.style.right = '40px';
-        this.scoreElement.style.fontSize = '32px';
-        this.scoreElement.style.color = '#ffcc00';
-        this.scoreElement.innerText = 'SCORE: 0';
-        this.container.appendChild(this.scoreElement);
+        // Money Display (Replaces Score/Coins)
+        this.moneyElement = document.createElement('div');
+        this.moneyElement.style.position = 'absolute';
+        this.moneyElement.style.top = '20px';
+        this.moneyElement.style.right = '40px';
+        this.moneyElement.style.fontSize = '32px';
+        this.moneyElement.style.color = '#00ff00'; // Green for money
+        this.moneyElement.innerText = `MONEY: ${this.money}`;
+        this.container.appendChild(this.moneyElement);
 
-        // Coin Count (Optional, for gameplay loop)
-        this.coinCountElement = document.createElement('div');
-        this.coinCountElement.style.position = 'absolute';
-        this.coinCountElement.style.top = '60px';
-        this.coinCountElement.style.right = '40px';
-        this.coinCountElement.style.fontSize = '24px';
-        this.coinCountElement.style.color = '#ffffff';
-        this.coinCountElement.innerText = 'COINS: 50';
-        this.container.appendChild(this.coinCountElement);
-
-        // Jackpot/Bonus display placeholders (Visuals from image)
         this.createJackpotDisplay();
     }
 
     createJackpotDisplay() {
-        // Placeholder for the "JACKPOT" and "MEGA PRIZE" LED texts
-        // In a real app these might be texture planes in 3D, but HTML overlay works too
+        // Placeholder for the "JACKPOT" display
     }
 
     render() {
         // Update DOM elements if needed
     }
 
-    updateScore(amount) {
-        this.score += amount;
-        this.scoreElement.innerText = `SCORE: ${this.score}`;
+    // New method for Money Logic
+    updateMoney(amount) {
+        this.money += amount;
+        this.moneyElement.innerText = `MONEY: ${this.money}`;
 
-        // Simple animation affect
-        this.scoreElement.style.transform = 'scale(1.2)';
-        setTimeout(() => this.scoreElement.style.transform = 'scale(1)', 100);
+        // Animation
+        this.moneyElement.style.transform = 'scale(1.2)';
+        this.moneyElement.style.color = amount > 0 ? '#00ff00' : '#ff0000'; // Green text for gain, Red for spend
+
+        setTimeout(() => {
+            this.moneyElement.style.transform = 'scale(1)';
+            this.moneyElement.style.color = '#00ff00'; // Revert to green
+        }, 100);
     }
 }
