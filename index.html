@@ -6,10 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coin Pusher Casino Game</title>
     <link rel="stylesheet" href="styles/style.css">
+    <style>
+        /* Oculta el cuadro negro del error-log si no hay ningún error dentro */
+        #error-log:empty {
+            display: none;
+        }
+    </style>
 </head>
 
 <body>
-    <!-- Error Logger -->
     <div id="error-log"
         style="position: absolute; top: 0; left: 0; color: red; background: rgba(0,0,0,0.8); z-index: 1000; padding: 10px; font-family: monospace; max-width: 100%;">
     </div>
@@ -25,8 +30,7 @@
     </script>
 
     <div id="game-container">
-        <!-- Game Canvas or Elements will go here -->
-    </div>
+        </div>
 
     <script type="importmap">
         {
@@ -37,7 +41,6 @@
             }
         }
     </script>
-    <!-- Main Entry Point -->
     <script type="module" src="src/main/Main.js"></script>
 </body>
 

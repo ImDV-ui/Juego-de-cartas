@@ -11,7 +11,12 @@ export class InputController {
     }
 
     onMouseDown(e) {
-        // Handle mouse down
+        // Simple click to spawn coin
+        if (this.onDropCoin) {
+            // Randomize drops slightly across the width
+            const x = (Math.random() - 0.5) * 6;
+            this.onDropCoin(x);
+        }
     }
 
     onMouseMove(e) {

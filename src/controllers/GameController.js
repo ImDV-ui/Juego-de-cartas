@@ -16,6 +16,14 @@ export class GameController {
         this.cardController = new CardController();
         this.inputController = new InputController();
 
+        // Connect Input to Game Actions
+        this.inputController.onDropCoin = (x) => {
+            // Drop a coin at X position, height 4
+            // Z updated to -2 (Further forward / closer to camera) to drop ON the pusher reliably 
+            // but not "too far back".
+            this.coinController.spawnCoin(x, 4, -2);
+        };
+
         this.pusherTime = 0;
     }
 
