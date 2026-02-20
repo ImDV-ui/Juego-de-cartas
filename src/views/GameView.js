@@ -196,7 +196,6 @@ export class GameView {
 
         this.loadMarioModels();
         this.loadKongModel();
-        this.loadBarrelModel();
     }
 
     loadMarioModels() {
@@ -284,64 +283,16 @@ export class GameView {
         });
     }
 
-    loadBarrelModel() {
-        if (!this.loader) this.loader = new ColladaLoader();
-
-        this.barrelModelTemplate = null;
-
-        // %20 sustituye al espacio en la ruta "DK Barrel" para evitar fallos de lectura HTTP
-        this.loader.load('assets/images/DK%20Barrel/DKBarrel.dae', (collada) => {
-            const model = collada.scene;
-
-            const box = new THREE.Box3().setFromObject(model);
-            const size = box.getSize(new THREE.Vector3());
-            const maxDim = Math.max(size.x, size.y, size.z);
-            const scale = 3.0 / maxDim;
-
-            model.scale.set(scale, scale, scale);
-
-            const center = box.getCenter(new THREE.Vector3());
-            model.position.sub(center.multiplyScalar(scale));
-
-            const group = new THREE.Group();
-            group.add(model);
-
-            this.barrelModelTemplate = group;
-            console.log("✅ Modelo del Barril DK cargado correctamente.");
-
-        }, undefined, (error) => {
-            console.error('❌ Error cargando el modelo del barril DK:', error);
-            // Si falla marcamos un error para activar el barril procedural (fallback)
-            this.barrelModelTemplate = 'error';
-        });
-    }
-
     createBarrelMesh(position, quaternion) {
-        let mesh;
-
-        // Comprobamos que exista y que NO sea un error de carga
-        if (this.barrelModelTemplate && this.barrelModelTemplate !== 'error') {
-            mesh = this.barrelModelTemplate.clone();
-        } else {
-            console.warn("⚠️ Usando cilindro de emergencia (el modelo 3D aún no carga o falló).");
-            // Tamaño similar a shape de CANNON: 1.05 de radio, 3.0 de alto
-            const geometry = new THREE.CylinderGeometry(1.05, 1.05, 3.0, 16);
-            const material = new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.9 });
-            const basicMesh = new THREE.Mesh(geometry, material);
-
-            mesh = new THREE.Group();
-            mesh.add(basicMesh);
-        }
+        const geometry = new THREE.CylinderGeometry(0.9, 0.9, 4.0, 16);
+        const material = new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.9 });
+        const mesh = new THREE.Mesh(geometry, material);
 
         mesh.position.copy(position);
         mesh.quaternion.copy(quaternion);
 
-        mesh.traverse((child) => {
-            if (child.isMesh) {
-                child.castShadow = true;
-                child.receiveShadow = true;
-            }
-        });
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
 
         this.scene.add(mesh);
         return mesh;
@@ -350,6 +301,8 @@ export class GameView {
     removeBarrelMesh(mesh) {
         if (mesh) {
             this.scene.remove(mesh);
+            if (mesh.geometry) mesh.geometry.dispose();
+            if (mesh.material) mesh.material.dispose();
         }
     }
 

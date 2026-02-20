@@ -34,7 +34,8 @@ export class GameController {
 
         this.spawnCardItem();
 
-        this.trySpawnBarrelTest();
+        // Spawn first barrel after 5 seconds simulating DK's throw
+        setTimeout(() => this.spawnBarrel(), 5000);
     }
 
     update(deltaTime) {
@@ -77,15 +78,6 @@ export class GameController {
 
         for (let i = this.barrels.length - 1; i >= 0; i--) {
             const item = this.barrels[i];
-
-            // --- ESCUDO ANTI-ERRORES DE CANNON ---
-            if (isNaN(item.body.position.y)) {
-                this.physics.world.removeBody(item.body);
-                this.view.removeBarrelMesh(item.mesh);
-                this.barrels.splice(i, 1);
-                continue;
-            }
-
             item.mesh.position.copy(item.body.position);
             item.mesh.quaternion.copy(item.body.quaternion);
 
@@ -128,36 +120,26 @@ export class GameController {
         this.cardItems.push({ body, mesh, cardData: randomCard });
     }
 
-    trySpawnBarrelTest(attempts = 0) {
-        if (this.view.barrelModelTemplate && this.view.barrelModelTemplate !== 'error') {
-            console.log("Modelo 3D listo. ¡Lanzando barril!");
-            this.spawnBarrel();
-        } else if (this.view.barrelModelTemplate === 'error' || attempts > 10) {
-            console.log("Lanzando barril de emergencia...");
-            this.spawnBarrel();
-        } else {
-            console.log("Esperando a que cargue el barril... (Intento " + attempts + ")");
-            setTimeout(() => this.trySpawnBarrelTest(attempts + 1), 500);
-        }
-    }
-
     spawnBarrel() {
-        // SPAWN 100% SEGURO: Alto, en el centro de la escena, lejos del pusher
-        const position = new CANNON.Vec3(0, 12, 0);
+        // Spawn right below Kong's hands and drop it straight down
+        // In GameView, Kong is at y: ~3, z: -4.5 (sweeper/back platform area)
+        // He's raised up, so spawn at his feet/hands level
+        const x = 0; // Centered
+        const y = 5.0; // Height of Kong's hands/platform edge
+        const z = -3.5; // Front edge of Kong's platform
+        const position = new CANNON.Vec3(x, y, z);
 
-        // Lo dejamos caer con un leve empuje hacia el frente
-        const velocity = new CANNON.Vec3(0, -2, 2);
+        // Let it drop and roll forward naturally
+        const velocity = new CANNON.Vec3(
+            0,                           // Straight Line
+            0,                          // Free fall
+            5                           // Moderate push forward to make it roll down the slope/pusher
+        );
 
         const body = this.physics.createBarrel(position, velocity);
         const mesh = this.view.createBarrelMesh(body.position, body.quaternion);
 
-        if (mesh) {
-            this.barrels.push({ body, mesh });
-            console.log("¡Barril lanzado cayendo desde el cielo!");
-        } else {
-            this.physics.world.removeBody(body);
-            console.log("Error crítico: No se instanció ninguna malla.");
-        }
+        this.barrels.push({ body, mesh });
     }
 
     render() {

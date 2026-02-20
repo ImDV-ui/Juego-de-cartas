@@ -104,26 +104,32 @@ export class PhysicsController {
     }
 
     createBarrel(position, velocity) {
-        // Barrel shape: Cylinder approx radius 1.2 and height 3.0 (matches 3x visual scale)
-        // Using same physics properties as coins/cards for stability, just scaled up.
-        const shape = new CANNON.Cylinder(1.2, 1.2, 3.0, 16);
+        const shape = new CANNON.Cylinder(0.9, 0.9, 4.0, 16);
         const body = new CANNON.Body({
-            mass: 5, // Reduced from 50 to 5 for stability (closer to coins' 1.0)
+            mass: 25, // Heavier to sweep coins better
             material: this.materials.coin,
             linearDamping: 0.1,
-            angularDamping: 0.5, // Matches coins/cards
+            angularDamping: 0.1, // Less angular damping so it rolls freely
             allowSleep: false
         });
 
-        // Cannon Cylinder is along Z axis. Rotate to align with Y axis (upright).
+        // Rotate the cylinder so it lies flat on its side (rolling position)
+        // Cylinder default is along Z. We want it along X to roll forward (Z direction).
         const q = new CANNON.Quaternion();
-        q.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+        q.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI / 2);
         body.addShape(shape, new CANNON.Vec3(0, 0, 0), q);
 
         body.position.copy(position);
 
         if (velocity) {
             body.velocity.copy(velocity);
+
+            // Add some spin to the barrel when thrown
+            body.angularVelocity.set(
+                (Math.random() - 0.5) * 10,
+                0,
+                (Math.random() - 0.5) * 10
+            );
         }
 
         this.world.addBody(body);
