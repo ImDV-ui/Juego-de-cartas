@@ -104,7 +104,7 @@ export class GameView {
             console.log("Moneda renderizada con luz e iluminación correcta.");
         });
 
-        this.mixers = []; 
+        this.mixers = [];
 
         window.addEventListener('resize', () => this.onWindowResize(), false);
     }
@@ -148,13 +148,13 @@ export class GameView {
 
         // Materiales genéricos para la caja detrás del Thwomp
         const pusherBoxMaterial = new THREE.MeshStandardMaterial({
-            color: 0x5a5a5a, 
+            color: 0x5a5a5a,
             roughness: 0.9,
             metalness: 0.1
         });
 
         const pusherMaterials = [
-            pusherBoxMaterial, pusherBoxMaterial, pusherBoxMaterial, 
+            pusherBoxMaterial, pusherBoxMaterial, pusherBoxMaterial,
             pusherBoxMaterial, pusherBoxMaterial, pusherBoxMaterial
         ];
 
@@ -200,7 +200,8 @@ export class GameView {
         const rightWallGroup = createBlockStructure(1, 4, 12, wallMaterial, new THREE.Vector3(5.5, 2, 1));
         this.scene.add(rightWallGroup);
 
-        const pusherGeo = new THREE.BoxGeometry(10, 1, 10);
+        const pusherGeo = new THREE.BoxGeometry(10, 2, 10);
+        pusherGeo.translate(0, 0.5, 0); // Lo desplazamos hacia arriba para que mantenga su base pegada al suelo
         this.pusherMesh = new THREE.Mesh(pusherGeo, pusherMaterials);
         this.pusherMesh.position.set(0, 0.45, -4);
         this.pusherMesh.receiveShadow = true;
@@ -216,7 +217,7 @@ export class GameView {
 
         this.loadMarioModels();
         this.loadDancingKongModel();
-        
+
         // ¡Llamamos a nuestra nueva y limpia función GLB!
         this.loadThwompPusher();
     }
@@ -231,37 +232,42 @@ export class GameView {
             // 1. Calculamos el tamaño original y lo normalizamos a unos 2 metros de ancho
             const box = new THREE.Box3().setFromObject(object);
             const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
             const maxDim = Math.max(size.x, size.y, size.z);
             const scale = 2.0 / maxDim; // 2.0 encaja perfecto en 10 metros (5 rocas = 10m)
-            object.scale.set(scale, scale, scale);
 
-            const numThwomps = 5; 
+            const numThwomps = 5;
             const pusherWidth = 10;
             const spacing = pusherWidth / numThwomps;
             const startX = -(pusherWidth / 2) + (spacing / 2);
 
             for (let i = 0; i < numThwomps; i++) {
+                const wrapper = new THREE.Group();
                 const thwomp = object.clone();
-                
+
+                // Centramos el punto de origen de la piedra dentro de su wrapper
+                thwomp.position.set(-center.x, -center.y, -center.z);
+
+                wrapper.add(thwomp);
+                wrapper.scale.set(scale, scale, scale);
+
                 // Z = 5 lo pone justo en la cara delantera del bloque empujador (que mide 10 de fondo)
-                // Y = 0.5 puede elevarlo un poquito si ves que roza mucho el suelo
-                thwomp.position.set(startX + (i * spacing), 0.5, 5.0); 
-                
+                wrapper.position.set(startX + (i * spacing), 0.5, 5.0);
+
                 // MUY IMPORTANTE: A veces los GLB de MagicaVoxel o Sketchfab vienen rotados.
                 // Si la cara mira hacia Kong o hacia un lado, quita las "//" de la línea de abajo 
                 // y juega con los valores (Math.PI = 180º, Math.PI/2 = 90º).
                 // thwomp.rotation.y = Math.PI; 
 
-                thwomp.traverse((child) => {
+                wrapper.traverse((child) => {
                     if (child.isMesh) {
                         child.castShadow = true;
                         child.receiveShadow = true;
-                        // Ya no necesitamos forzar materiales grises, ¡el GLB los trae perfectos!
                     }
                 });
 
                 if (this.pusherMesh) {
-                    this.pusherMesh.add(thwomp);
+                    this.pusherMesh.add(wrapper);
                 }
             }
 
@@ -329,14 +335,14 @@ export class GameView {
         gltfLoader.load('assets/images/donkey_kong_dancing.glb', (gltf) => {
             const dancingKong = gltf.scene;
 
-            const scale = 1.8; 
+            const scale = 1.8;
             dancingKong.scale.set(scale, scale, scale);
 
             const yOffset = 2.9;
             const zOffset = -1.7;
 
             dancingKong.position.set(0, yOffset, zOffset);
-            dancingKong.rotation.set(0, 0, 0); 
+            dancingKong.rotation.set(0, 0, 0);
 
             dancingKong.traverse((child) => {
                 if (child.isMesh) {
@@ -362,7 +368,7 @@ export class GameView {
 
     createBarrelMesh(position, quaternion) {
         const geometry = new THREE.CylinderGeometry(0.9, 0.9, 4.0, 16);
-        geometry.rotateZ(Math.PI / 2); 
+        geometry.rotateZ(Math.PI / 2);
 
         const textureLoader = new THREE.TextureLoader();
         const texture = textureLoader.load('assets/images/barril/skbarrelTex0.png');

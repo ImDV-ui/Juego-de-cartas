@@ -59,21 +59,22 @@ export class PhysicsController {
         this.world.addBody(rightWall);
 
         // --- SOLUCIÓN: LA CAJA FÍSICA DEL EMPUJADOR ---
-        // Le damos más "gordura" (Z) y un poco más de altura (Y) para que la caja invisible 
-        // envuelva perfectamente a las Rocas Picudas que pegaste por delante.
-        // Dimensiones originales: (5, 0.5, 5). Nuevas: (5, 0.8, 6.2)
-        const pusherShape = new CANNON.Box(new CANNON.Vec3(5, 0.8, 6.2));
-        
+        // Le damos físicas a la barrera principal y también a las piedras de enfrente.
         this.pusherBody = new CANNON.Body({
             mass: 0,
             type: CANNON.Body.KINEMATIC,
             material: this.materials.pusher
         });
-        
-        // Desplazamos la caja física ligeramente hacia adelante (Z) dentro del cuerpo
-        // para compensar el grosor de los Thwomps.
-        this.pusherBody.addShape(pusherShape, new CANNON.Vec3(0, 0, 1.2));
-        
+
+        // Fusionamos la barrera base y las piedras frontales en UNA ÚNICA CAJA para evitar 
+        // cualquier resquicio o hueco interno donde las monedas puedan quedarse atascadas.
+        // Dimensiones base: Z va de -5 a +5 (caja 5,1,5 en Z=0). 
+        // Dimensiones Thwomps: Z va de +4 a +6 (caja 5,1,1 en Z=5).
+        // Caja total unida: Z va de -5 a +6. Ancho = 11 -> Mitad = 5.5.
+        // Centro Z: -5 + 5.5 = +0.5. Altura igual (1).
+        const unifiedPusherShape = new CANNON.Box(new CANNON.Vec3(5, 1, 5.5));
+        this.pusherBody.addShape(unifiedPusherShape, new CANNON.Vec3(0, 0.5, 0.5));
+
         this.pusherBody.position.set(0, 0.45, -4);
         this.world.addBody(this.pusherBody);
         // ----------------------------------------------
