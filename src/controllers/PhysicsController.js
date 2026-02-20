@@ -39,12 +39,14 @@ export class PhysicsController {
     }
 
     initCabinet() {
+        // Suelo principal
         const floorShape = new CANNON.Box(new CANNON.Vec3(5, 0.5, 5));
         const floorBody = new CANNON.Body({ mass: 0, material: this.materials.ground });
         floorBody.addShape(floorShape);
         floorBody.position.set(0, -0.5, 2);
         this.world.addBody(floorBody);
 
+        // Muros laterales
         const wallShape = new CANNON.Box(new CANNON.Vec3(0.5, 2, 6));
         const leftWall = new CANNON.Body({ mass: 0, material: this.materials.ground });
         leftWall.addShape(wallShape);
@@ -56,16 +58,27 @@ export class PhysicsController {
         rightWall.position.set(5.5, 2, 1);
         this.world.addBody(rightWall);
 
-        const pusherShape = new CANNON.Box(new CANNON.Vec3(5, 0.5, 5));
+        // --- SOLUCIÓN: LA CAJA FÍSICA DEL EMPUJADOR ---
+        // Le damos más "gordura" (Z) y un poco más de altura (Y) para que la caja invisible 
+        // envuelva perfectamente a las Rocas Picudas que pegaste por delante.
+        // Dimensiones originales: (5, 0.5, 5). Nuevas: (5, 0.8, 6.2)
+        const pusherShape = new CANNON.Box(new CANNON.Vec3(5, 0.8, 6.2));
+        
         this.pusherBody = new CANNON.Body({
             mass: 0,
             type: CANNON.Body.KINEMATIC,
             material: this.materials.pusher
         });
-        this.pusherBody.addShape(pusherShape);
+        
+        // Desplazamos la caja física ligeramente hacia adelante (Z) dentro del cuerpo
+        // para compensar el grosor de los Thwomps.
+        this.pusherBody.addShape(pusherShape, new CANNON.Vec3(0, 0, 1.2));
+        
         this.pusherBody.position.set(0, 0.45, -4);
         this.world.addBody(this.pusherBody);
+        // ----------------------------------------------
 
+        // El techo que evita que las monedas se cuelen por arriba y por detrás
         const sweeperShape = new CANNON.Box(new CANNON.Vec3(5, 1, 4));
         const sweeperBody = new CANNON.Body({ mass: 0, material: this.materials.ground });
         sweeperBody.addShape(sweeperShape);

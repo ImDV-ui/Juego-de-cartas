@@ -104,7 +104,7 @@ export class GameView {
             console.log("Moneda renderizada con luz e iluminación correcta.");
         });
 
-        this.mixers = []; // Keep track of animation mixers
+        this.mixers = []; 
 
         window.addEventListener('resize', () => this.onWindowResize(), false);
     }
@@ -146,38 +146,16 @@ export class GameView {
             metalness: 0.0
         });
 
-        const stoneFaceTexture = textureLoader.load('assets/images/piedra/DossunFaceMat_Alb.png');
-        stoneFaceTexture.wrapS = THREE.RepeatWrapping;
-        stoneFaceTexture.wrapT = THREE.RepeatWrapping;
-        stoneFaceTexture.magFilter = THREE.NearestFilter;
-        stoneFaceTexture.repeat.set(5, 1);
-        stoneFaceTexture.offset.set(0.1, 0);
-
-        const stoneFaceMaterial = new THREE.MeshStandardMaterial({
-            map: stoneFaceTexture,
+        // Materiales genéricos para la caja detrás del Thwomp
+        const pusherBoxMaterial = new THREE.MeshStandardMaterial({
+            color: 0x5a5a5a, 
             roughness: 0.9,
-            metalness: 0.0
-        });
-
-        const stonePartsTexture = textureLoader.load('assets/images/piedra/DossunPartsMat_Alb.png');
-        stonePartsTexture.wrapS = THREE.RepeatWrapping;
-        stonePartsTexture.wrapT = THREE.RepeatWrapping;
-        stonePartsTexture.magFilter = THREE.NearestFilter;
-        stonePartsTexture.repeat.set(5, 5); 
-
-        const stonePartsMaterial = new THREE.MeshStandardMaterial({
-            map: stonePartsTexture,
-            roughness: 0.9,
-            metalness: 0.0
+            metalness: 0.1
         });
 
         const pusherMaterials = [
-            stonePartsMaterial, // Right
-            stonePartsMaterial, // Left
-            stonePartsMaterial, // Top
-            stonePartsMaterial, // Bottom
-            stoneFaceMaterial,  // Front (Facing the coins)
-            stonePartsMaterial  // Back
+            pusherBoxMaterial, pusherBoxMaterial, pusherBoxMaterial, 
+            pusherBoxMaterial, pusherBoxMaterial, pusherBoxMaterial
         ];
 
         const sweeperMaterial = new THREE.MeshStandardMaterial({ color: 0x6b2d08, roughness: 0.9 });
@@ -236,89 +214,64 @@ export class GameView {
         sweeperMesh.receiveShadow = true;
         this.scene.add(sweeperMesh);
 
-        // Cargamos todos los modelos 3D
         this.loadMarioModels();
         this.loadDancingKongModel();
         
-        // ¡Cargamos los nuevos Thwomps para el empujador!
+        // ¡Llamamos a nuestra nueva y limpia función GLB!
         this.loadThwompPusher();
     }
 
-    // --- NUEVA FUNCIÓN PARA AÑADIR LAS ROCAS THWOMP ---
+    // --- NUEVA VERSIÓN SÚPER LIMPIA: CARGADOR DE THWOMP GLB ---
     loadThwompPusher() {
-        // Usamos el cargador MTL para leer tu thwomp.mtl
-        const mtlLoader = new MTLLoader();
-        mtlLoader.setPath('assets/images/');
-        
-        mtlLoader.load('thwomp.mtl', (materials) => {
-            materials.preload();
+        const gltfLoader = new GLTFLoader();
 
-            // Usamos el cargador OBJ y le conectamos el MTL que acabamos de cargar
-            const objLoader = new OBJLoader();
-            objLoader.setMaterials(materials);
-            objLoader.setPath('assets/images/');
-            
-            objLoader.load('thwomp.obj', (object) => {
+        gltfLoader.load('assets/images/thwomp.glb', (gltf) => {
+            const object = gltf.scene;
 
-                // Ajuste de escala automático
-                const box = new THREE.Box3().setFromObject(object);
-                const size = box.getSize(new THREE.Vector3());
-                const maxDim = Math.max(size.x, size.y, size.z);
-                const scale = 2.0 / maxDim; 
-                object.scale.set(scale, scale, scale);
+            // 1. Calculamos el tamaño original y lo normalizamos a unos 2 metros de ancho
+            const box = new THREE.Box3().setFromObject(object);
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const scale = 2.0 / maxDim; // 2.0 encaja perfecto en 10 metros (5 rocas = 10m)
+            object.scale.set(scale, scale, scale);
 
-                const numThwomps = 5; 
-                const pusherWidth = 10;
-                const spacing = pusherWidth / numThwomps;
-                const startX = -(pusherWidth / 2) + (spacing / 2);
+            const numThwomps = 5; 
+            const pusherWidth = 10;
+            const spacing = pusherWidth / numThwomps;
+            const startX = -(pusherWidth / 2) + (spacing / 2);
 
-                for (let i = 0; i < numThwomps; i++) {
-                    const thwomp = object.clone();
-                    
-                    thwomp.position.set(startX + (i * spacing), 0, 5); 
-                    
-                    // thwomp.rotation.y = Math.PI; 
+            for (let i = 0; i < numThwomps; i++) {
+                const thwomp = object.clone();
+                
+                // Z = 5 lo pone justo en la cara delantera del bloque empujador (que mide 10 de fondo)
+                // Y = 0.5 puede elevarlo un poquito si ves que roza mucho el suelo
+                thwomp.position.set(startX + (i * spacing), 0.5, 5.0); 
+                
+                // MUY IMPORTANTE: A veces los GLB de MagicaVoxel o Sketchfab vienen rotados.
+                // Si la cara mira hacia Kong o hacia un lado, quita las "//" de la línea de abajo 
+                // y juega con los valores (Math.PI = 180º, Math.PI/2 = 90º).
+                // thwomp.rotation.y = Math.PI; 
 
-                    thwomp.traverse((child) => {
-                        if (child.isMesh) {
-                            child.castShadow = true;
-                            child.receiveShadow = true;
-                            
-                            // --- CÓDIGO DE RESCATE PARA EL MTL ---
-                            // Si el MTL se cargó pero dejó piezas en negro puro, lo repintamos
-                            if (child.material) {
-                                // Si el modelo tiene varias partes separadas
-                                if (Array.isArray(child.material)) {
-                                    child.material.forEach(mat => {
-                                        // Si el color es negro (0x000000), le damos color piedra
-                                        if (mat.color.getHex() === 0x000000) mat.color.setHex(0x7a7a7a);
-                                    });
-                                } else {
-                                    // Si es una sola pieza sólida
-                                    if (child.material.color.getHex() === 0x000000) {
-                                        child.material.color.setHex(0x7a7a7a);
-                                    }
-                                }
-                            }
-                            // -------------------------------------
-                        }
-                    });
-
-                    if (this.pusherMesh) {
-                        this.pusherMesh.add(thwomp);
+                thwomp.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        // Ya no necesitamos forzar materiales grises, ¡el GLB los trae perfectos!
                     }
+                });
+
+                if (this.pusherMesh) {
+                    this.pusherMesh.add(thwomp);
                 }
+            }
 
-                console.log("Rocas Thwomp cargadas usando el archivo .mtl");
+            console.log("✅ Rocas Thwomp (.glb) cargadas con éxito y pegadas al empujador.");
 
-            }, undefined, (error) => {
-                console.error('Error al cargar thwomp.obj:', error);
-            });
         }, undefined, (error) => {
-            console.error('Error al cargar thwomp.mtl:', error);
+            console.error('❌ Error al cargar thwomp.glb:', error);
         });
     }
-    // --------------------------------------------------
+    // ------------------------------------------------------------
 
     loadMarioModels() {
         const mtlLoader = new MTLLoader();
