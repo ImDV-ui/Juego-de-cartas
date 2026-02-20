@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { ColladaLoader } from 'three/addons/loaders/ColladaLoader.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { UIView } from './UIView.js';
 
 export class GameView {
@@ -103,6 +104,8 @@ export class GameView {
             console.log("Moneda renderizada con luz e iluminación correcta.");
         });
 
+        this.mixers = []; // Keep track of animation mixers
+
         window.addEventListener('resize', () => this.onWindowResize(), false);
     }
 
@@ -195,9 +198,8 @@ export class GameView {
         this.scene.add(sweeperMesh);
 
         this.loadMarioModels();
-        this.loadKongModel();
+        this.loadDancingKongModel();
     }
-
     loadMarioModels() {
         const mtlLoader = new MTLLoader();
         mtlLoader.setPath('assets/images/Mario/');
@@ -248,44 +250,67 @@ export class GameView {
         });
     }
 
-    loadKongModel() {
-        if (!this.loader) this.loader = new ColladaLoader();
+    loadDancingKongModel() {
+        const gltfLoader = new GLTFLoader();
 
-        this.loader.load('assets/images/kong/pc12_DK_piece_m4_pc12_piece_m4.dae', (collada) => {
-            const kongModel = collada.scene;
+        gltfLoader.load('assets/images/donkey_kong_dancing.glb', (gltf) => {
+            const dancingKong = gltf.scene;
 
-            const box = new THREE.Box3().setFromObject(kongModel);
-            const size = box.getSize(new THREE.Vector3());
-            const maxDim = Math.max(size.x, size.y, size.z);
-            const scale = 3.5 / maxDim;
+            // Some GLTF models with animations have huge un-normalized bounds or bones.
+            // Ignore the bounding box and force a manual scale.
+            const scale = 1.8; // Increased to make him bigger in the center
+            dancingKong.scale.set(scale, scale, scale);
 
-            kongModel.scale.set(scale, scale, scale);
-            kongModel.updateMatrixWorld();
-            const scaledBox = new THREE.Box3().setFromObject(kongModel);
+            // Hardcode offsets so he touches the floor and is moved far forward
+            const yOffset = 2.9;
+            const zOffset = -1.7;
 
-            const yOffset = 3 - scaledBox.min.y - 0.05;
-            const zOffset = -1.0 - scaledBox.max.z;
+            dancingKong.position.set(0, yOffset, zOffset);
+            dancingKong.rotation.set(0, 0, 0); // Face straight forward
 
-            kongModel.position.set(0, yOffset, zOffset);
-            kongModel.rotation.set(0, 0, 0);
-
-            kongModel.traverse((child) => {
+            dancingKong.traverse((child) => {
                 if (child.isMesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
                 }
             });
 
-            this.scene.add(kongModel);
+            this.scene.add(dancingKong);
 
+            // Setup animation
+            if (gltf.animations && gltf.animations.length > 0) {
+                const mixer = new THREE.AnimationMixer(dancingKong);
+                // Play the first animation (dancing)
+                const action = mixer.clipAction(gltf.animations[0]);
+                action.play();
+                this.mixers.push(mixer);
+            }
+
+            console.log("✅ Modelo Dancing Kong cargado y animado correctamente.");
         }, undefined, (error) => {
-            console.error('An error occurred loading Kong model:', error);
+            console.error('❌ Error cargando el modelo Dancing Kong:', error);
         });
     }
 
     createBarrelMesh(position, quaternion) {
+        // Create the primitive cylinder geometry matching physics
         const geometry = new THREE.CylinderGeometry(0.9, 0.9, 4.0, 16);
-        const material = new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.9 });
+        geometry.rotateZ(Math.PI / 2); // Rotate mesh to be horizontal along X axis
+
+        // Load the texture dynamically and apply it to a basic material
+        const textureLoader = new THREE.TextureLoader();
+        const texture = textureLoader.load('assets/images/DK%20Barrel/images/dkbarrel_alb.png');
+        // Wrapping and repeating to make it fit nicely
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+
+        // The face of the cylinder gets the texture
+        const material = new THREE.MeshStandardMaterial({
+            map: texture,
+            roughness: 0.8,
+            metalness: 0.1
+        });
+
         const mesh = new THREE.Mesh(geometry, material);
 
         mesh.position.copy(position);
@@ -460,7 +485,12 @@ export class GameView {
         }
     }
 
-    render() {
+    render(deltaTime = 0) {
+        // Update all animation mixers
+        for (const mixer of this.mixers) {
+            mixer.update(deltaTime);
+        }
+
         this.renderer.render(this.scene, this.camera);
         this.ui.render();
     }

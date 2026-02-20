@@ -12,16 +12,21 @@ export class PhysicsController {
         this.materials = {
             ground: new CANNON.Material('ground'),
             coin: new CANNON.Material('coin'),
-            pusher: new CANNON.Material('pusher')
+            pusher: new CANNON.Material('pusher'),
+            barrel: new CANNON.Material('barrel')
         };
 
         const coinGround = new CANNON.ContactMaterial(this.materials.coin, this.materials.ground, { friction: 0.05, restitution: 0.3 });
         const coinCoin = new CANNON.ContactMaterial(this.materials.coin, this.materials.coin, { friction: 0.05, restitution: 0.3 });
         const coinPusher = new CANNON.ContactMaterial(this.materials.coin, this.materials.pusher, { friction: 0.1, restitution: 0.1 });
+        const barrelCoin = new CANNON.ContactMaterial(this.materials.barrel, this.materials.coin, { friction: 0.8, restitution: 0.8 }); // Very bouncy and heavy friction against coins
+        const barrelGround = new CANNON.ContactMaterial(this.materials.barrel, this.materials.ground, { friction: 0.2, restitution: 0.2 });
 
         this.world.addContactMaterial(coinGround);
         this.world.addContactMaterial(coinCoin);
         this.world.addContactMaterial(coinPusher);
+        this.world.addContactMaterial(barrelCoin);
+        this.world.addContactMaterial(barrelGround);
 
         this.bodies = [];
         this.pusherBody = null;
@@ -106,17 +111,17 @@ export class PhysicsController {
     createBarrel(position, velocity) {
         const shape = new CANNON.Cylinder(0.9, 0.9, 4.0, 16);
         const body = new CANNON.Body({
-            mass: 25, // Heavier to sweep coins better
-            material: this.materials.coin,
+            mass: 50, // Massive weight so coins don't impede it at all
+            material: this.materials.barrel, // Uses the new bouncy/heavy material hitting coins
             linearDamping: 0.1,
-            angularDamping: 0.1, // Less angular damping so it rolls freely
+            angularDamping: 0.1,
             allowSleep: false
         });
 
-        // Rotate the cylinder so it lies flat on its side (rolling position)
-        // Cylinder default is along Z. We want it along X to roll forward (Z direction).
+        // Rotate the cylinder so it lies flat on its side (rolling position) horizontally (X-axis)
+        // Cylinder default is along Y in Cannon-es. We want it along X.
         const q = new CANNON.Quaternion();
-        q.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI / 2);
+        q.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), Math.PI / 2);
         body.addShape(shape, new CANNON.Vec3(0, 0, 0), q);
 
         body.position.copy(position);

@@ -121,19 +121,17 @@ export class GameController {
     }
 
     spawnBarrel() {
-        // Spawn right below Kong's hands and drop it straight down
-        // In GameView, Kong is at y: ~3, z: -4.5 (sweeper/back platform area)
-        // He's raised up, so spawn at his feet/hands level
+        // Spawn fully in front of Kong's platform so it drops cleanly onto the coins
         const x = 0; // Centered
-        const y = 5.0; // Height of Kong's hands/platform edge
-        const z = -3.5; // Front edge of Kong's platform
+        const y = 6.0; // Higher up
+        const z = -0.0; // Pushed well forward of Kong's position
         const position = new CANNON.Vec3(x, y, z);
 
-        // Let it drop and roll forward naturally
+        // Throw it diagonally down into the coins instead of straight forward
         const velocity = new CANNON.Vec3(
             0,                           // Straight Line
-            0,                          // Free fall
-            5                           // Moderate push forward to make it roll down the slope/pusher
+            -15,                         // Hard downward slam
+            8                            // Less forward thrust so it goes down more than forward
         );
 
         const body = this.physics.createBarrel(position, velocity);
@@ -142,8 +140,8 @@ export class GameController {
         this.barrels.push({ body, mesh });
     }
 
-    render() {
-        this.view.render();
+    render(deltaTime) {
+        this.view.render(deltaTime);
         this.coinController.render();
         this.cardController.render();
     }

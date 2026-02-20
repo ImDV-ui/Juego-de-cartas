@@ -23,7 +23,7 @@ export class GameLoop {
         this.lastTime = timestamp;
 
         this.gameController.update(deltaTime);
-        this.gameController.render();
+        this.gameController.render(deltaTime);
 
         requestAnimationFrame((timestamp) => this.loop(timestamp));
     }
