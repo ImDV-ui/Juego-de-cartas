@@ -145,6 +145,44 @@ export class GameView {
             roughness: 0.8,
             metalness: 0.0
         });
+
+        const stoneFaceTexture = textureLoader.load('assets/images/piedra/DossunFaceMat_Alb.png');
+        stoneFaceTexture.wrapS = THREE.RepeatWrapping;
+        stoneFaceTexture.wrapT = THREE.RepeatWrapping;
+        stoneFaceTexture.magFilter = THREE.NearestFilter;
+        // Make the face cover the 1-unit height and repeat 5 times across the 10-unit width
+        stoneFaceTexture.repeat.set(5, 1);
+        // Shift it half a unit so the faces align nicely with the edges of the box
+        stoneFaceTexture.offset.set(0.1, 0);
+
+        const stoneFaceMaterial = new THREE.MeshStandardMaterial({
+            map: stoneFaceTexture,
+            roughness: 0.9,
+            metalness: 0.0
+        });
+
+        const stonePartsTexture = textureLoader.load('assets/images/piedra/DossunPartsMat_Alb.png');
+        stonePartsTexture.wrapS = THREE.RepeatWrapping;
+        stonePartsTexture.wrapT = THREE.RepeatWrapping;
+        stonePartsTexture.magFilter = THREE.NearestFilter;
+        stonePartsTexture.repeat.set(5, 5); // Assuming the top is 10x10 and looks decent with 5x5 repeating
+
+        const stonePartsMaterial = new THREE.MeshStandardMaterial({
+            map: stonePartsTexture,
+            roughness: 0.9,
+            metalness: 0.0
+        });
+
+        // The BoxGeometry takes 6 materials: [+X, -X, +Y, -Y, +Z (Front), -Z (Back)]
+        const pusherMaterials = [
+            stonePartsMaterial, // Right
+            stonePartsMaterial, // Left
+            stonePartsMaterial, // Top
+            stonePartsMaterial, // Bottom
+            stoneFaceMaterial,  // Front (Facing the coins)
+            stonePartsMaterial  // Back
+        ];
+
         const sweeperMaterial = new THREE.MeshStandardMaterial({ color: 0x6b2d08, roughness: 0.9 });
 
         const floorGeo = new THREE.BoxGeometry(10, 1, 10);
@@ -187,7 +225,13 @@ export class GameView {
         const rightWallGroup = createBlockStructure(1, 4, 12, wallMaterial, new THREE.Vector3(5.5, 2, 1));
         this.scene.add(rightWallGroup);
 
-        this.pusherMesh = createBlockStructure(10, 1, 10, grassMaterial, new THREE.Vector3(0, 0.45, -4));
+        // Instead of a grid of tiny blocks, the pusher is a single massive block 
+        // to allow the texture to display big Thwomp faces correctly.
+        const pusherGeo = new THREE.BoxGeometry(10, 1, 10);
+        this.pusherMesh = new THREE.Mesh(pusherGeo, pusherMaterials);
+        this.pusherMesh.position.set(0, 0.45, -4);
+        this.pusherMesh.receiveShadow = true;
+        this.pusherMesh.castShadow = true;
         this.scene.add(this.pusherMesh);
 
         const sweeperGeo = new THREE.BoxGeometry(10, 2, 8);
@@ -299,10 +343,16 @@ export class GameView {
 
         // Load the texture dynamically and apply it to a basic material
         const textureLoader = new THREE.TextureLoader();
-        const texture = textureLoader.load('assets/images/DK%20Barrel/images/dkbarrel_alb.png');
-        // Wrapping and repeating to make it fit nicely
+        const texture = textureLoader.load('assets/images/barril/skbarrelTex0.png');
+        // Wrapping and repeating to crop out the left half (the lid) and only show wooden planks
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
+
+        // The texture has the lid on the top half (V=0.5 to 1.0) and planks on the bottom half (V=0.0 to 0.5)
+        // We crop out the top half entirely so the side of the cylinder only shows planks.
+        texture.repeat.set(1, 0.5);
+        // Start reading from the bottom (V=0.0)
+        texture.offset.set(0, 0);
 
         // The face of the cylinder gets the texture
         const material = new THREE.MeshStandardMaterial({

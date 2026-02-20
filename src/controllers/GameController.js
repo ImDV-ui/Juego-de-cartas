@@ -33,9 +33,6 @@ export class GameController {
         this.barrels = [];
 
         this.spawnCardItem();
-
-        // Spawn first barrel after 5 seconds simulating DK's throw
-        setTimeout(() => this.spawnBarrel(), 5000);
     }
 
     update(deltaTime) {
@@ -81,6 +78,17 @@ export class GameController {
             item.mesh.position.copy(item.body.position);
             item.mesh.quaternion.copy(item.body.quaternion);
 
+            // --- FÍSICA INTELIGENTE EN 2 FASES ---
+            // Solo aplicamos la "gravedad magnética" cuando el barril 
+            // ya ha volado sobre el escalón y está a punto de tocar las monedas (y < 1.0)
+            if (item.body.position.y < 1.0) {
+                // Fuerzas aplicadas exactamente en el centro de masa del barril (0,0,0)
+                // -800 para pegarlo al suelo, +2000 en Z para empujarlo como una máquina barredora con su nuevo peso
+                const fuerzaSuelo = new CANNON.Vec3(0, -800, 2000);
+                item.body.applyForce(fuerzaSuelo, new CANNON.Vec3(0, 0, 0));
+            }
+            // --------------------------------------
+
             if (item.body.position.y < -5) {
                 this.physics.world.removeBody(item.body);
                 this.view.removeBarrelMesh(item.mesh);
@@ -109,6 +117,13 @@ export class GameController {
                 description: 'x2 Money for 2 mins!',
                 type: 'DOUBLE_MONEY',
                 image: 'assets/images/x2 de dinero.png'
+            },
+            {
+                id: 'donkey_barrel',
+                name: 'KONG BARREL',
+                description: 'Summons a heavy barrel to crush coins!',
+                type: 'DONKEY_BARREL',
+                image: 'assets/images/carta barril.png'
             }
         ];
 
@@ -121,17 +136,18 @@ export class GameController {
     }
 
     spawnBarrel() {
-        // Spawn fully in front of Kong's platform so it drops cleanly onto the coins
-        const x = 0; // Centered
-        const y = 6.0; // Higher up
-        const z = -0.0; // Pushed well forward of Kong's position
+        // Nace más adelante para que empiece a caer ya por encima de las monedas, no sobre el escalón
+        const x = 0;
+        const y = 3.5;   // Ligeramente más bajo para que no caiga de tan alto
+        const z = 1.0;   // z positivo para asegurar que nace por delante del precipicio verde
+
         const position = new CANNON.Vec3(x, y, z);
 
-        // Throw it diagonally down into the coins instead of straight forward
+        // Caída directa sin tanto impulso vertical 
         const velocity = new CANNON.Vec3(
-            0,                           // Straight Line
-            -15,                         // Hard downward slam
-            8                            // Less forward thrust so it goes down more than forward
+            0,
+            -15,   // Fuerte impulso hacia abajo para que no vuele por encima
+            8      // Impulso horizontal moderado
         );
 
         const body = this.physics.createBarrel(position, velocity);

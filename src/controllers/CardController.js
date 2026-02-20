@@ -25,6 +25,14 @@ export class CardController {
             type: 'DOUBLE_MONEY',
             image: 'assets/images/x2 de dinero.png'
         });
+
+        this.addCard({
+            id: 'donkey_barrel',
+            name: 'KONG BARREL',
+            description: 'Summons a heavy barrel to crush coins!',
+            type: 'DONKEY_BARREL',
+            image: 'assets/images/carta barril.png'
+        });
     }
 
     giveRandomCard() {
@@ -42,6 +50,13 @@ export class CardController {
                 description: 'x2 Money for 2 mins!',
                 type: 'DOUBLE_MONEY',
                 image: 'assets/images/x2 de dinero.png'
+            },
+            {
+                id: 'donkey_barrel',
+                name: 'KONG BARREL',
+                description: 'Summons a heavy barrel to crush coins!',
+                type: 'DONKEY_BARREL',
+                image: 'assets/images/carta barril.png'
             }
         ];
 
@@ -195,6 +210,11 @@ export class CardController {
                         console.log("Multiplier reset to x1");
                     }
                 }, 120000);
+            }
+        } else if (cardData.type === 'DONKEY_BARREL') {
+            console.log("Kong Barrel dropped!");
+            if (this.gameController) {
+                this.gameController.spawnBarrel();
             }
         } else if (cardData.type === 'GIFT_CARD') {
             console.log("Gift Card Collected!");

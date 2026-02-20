@@ -19,8 +19,12 @@ export class PhysicsController {
         const coinGround = new CANNON.ContactMaterial(this.materials.coin, this.materials.ground, { friction: 0.05, restitution: 0.3 });
         const coinCoin = new CANNON.ContactMaterial(this.materials.coin, this.materials.coin, { friction: 0.05, restitution: 0.3 });
         const coinPusher = new CANNON.ContactMaterial(this.materials.coin, this.materials.pusher, { friction: 0.1, restitution: 0.1 });
-        const barrelCoin = new CANNON.ContactMaterial(this.materials.barrel, this.materials.coin, { friction: 0.8, restitution: 0.8 }); // Very bouncy and heavy friction against coins
-        const barrelGround = new CANNON.ContactMaterial(this.materials.barrel, this.materials.ground, { friction: 0.2, restitution: 0.2 });
+
+        // MODIFICADO: Bajamos el rebote (restitution a 0.1) y la fricción para que actúe como una apisonadora
+        const barrelCoin = new CANNON.ContactMaterial(this.materials.barrel, this.materials.coin, { friction: 0.3, restitution: 0.1 });
+
+        // Material para que caiga a plomo sobre las plataformas sin rebotar
+        const barrelGround = new CANNON.ContactMaterial(this.materials.barrel, this.materials.ground, { friction: 0.2, restitution: 0.0 });
 
         this.world.addContactMaterial(coinGround);
         this.world.addContactMaterial(coinCoin);
@@ -111,7 +115,7 @@ export class PhysicsController {
     createBarrel(position, velocity) {
         const shape = new CANNON.Cylinder(0.9, 0.9, 4.0, 16);
         const body = new CANNON.Body({
-            mass: 50, // Massive weight so coins don't impede it at all
+            mass: 500, // Massive weight so coins don't impede it at all and it acts as a steamroller
             material: this.materials.barrel, // Uses the new bouncy/heavy material hitting coins
             linearDamping: 0.1,
             angularDamping: 0.1,
@@ -129,12 +133,8 @@ export class PhysicsController {
         if (velocity) {
             body.velocity.copy(velocity);
 
-            // Add some spin to the barrel when thrown
-            body.angularVelocity.set(
-                (Math.random() - 0.5) * 10,
-                0,
-                (Math.random() - 0.5) * 10
-            );
+            // MODIFICADO: Le damos un impulso de giro fuerte y CONSTANTE solo en el eje X
+            body.angularVelocity.set(20, 0, 0);
         }
 
         this.world.addBody(body);
