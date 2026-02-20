@@ -38,7 +38,7 @@ export class GameView {
         });
 
         this.setupLights();
-        
+
         this.loader = new ColladaLoader();
         this.coinModelTemplate = new THREE.Group();
 
@@ -200,8 +200,8 @@ export class GameView {
             const piedraModel = collada.scene;
 
             // Ajustamos la escala para que encaje como empujador
-            piedraModel.scale.set(2.5, 2.5, 2.5); 
-            
+            piedraModel.scale.set(2.5, 2.5, 2.5);
+
             // Subimos un poco el modelo dentro de su contenedor para que no roce el suelo
             piedraModel.position.set(0, 0.5, 0);
 
@@ -215,7 +215,7 @@ export class GameView {
 
             // 3. Metemos la Roca Picuda dentro del contenedor que se está moviendo
             this.pusherMesh.add(piedraModel);
-            
+
             console.log("Roca Picuda cargada y colocada como empujador");
         }, undefined, (error) => {
             console.error("Error al cargar la Roca Picuda:", error);
