@@ -97,7 +97,9 @@ export class PhysicsController {
     }
 
     createCardItem(position) {
-        const shape = new CANNON.Box(new CANNON.Vec3(0.6, 0.08, 0.9));
+        // Hacemos la caja física ligeramente más alta en el eje Y (antes 0.08, ahora 0.15)
+        // para que no cueste tanto empujarla pero no se deslice bajo la barrera
+        const shape = new CANNON.Box(new CANNON.Vec3(0.6, 0.15, 0.9));
         const body = new CANNON.Body({
             mass: 1.5,
             material: this.materials.coin,

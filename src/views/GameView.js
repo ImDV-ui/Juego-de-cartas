@@ -489,7 +489,8 @@ export class GameView {
     }
 
     createCardItemMesh(position, quaternion, imageUrl) {
-        const geometry = new THREE.BoxGeometry(1.2, 0.16, 1.8);
+        // Modelo 3D con grosor moderado (antes 0.6, ahora bajado a 0.3)
+        const geometry = new THREE.BoxGeometry(1.2, 0.3, 1.8);
         const texture = this.createCardTexture(imageUrl);
 
         texture.center.set(0.5, 0.5);
