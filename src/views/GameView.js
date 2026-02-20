@@ -150,9 +150,7 @@ export class GameView {
         stoneFaceTexture.wrapS = THREE.RepeatWrapping;
         stoneFaceTexture.wrapT = THREE.RepeatWrapping;
         stoneFaceTexture.magFilter = THREE.NearestFilter;
-        // Make the face cover the 1-unit height and repeat 5 times across the 10-unit width
         stoneFaceTexture.repeat.set(5, 1);
-        // Shift it half a unit so the faces align nicely with the edges of the box
         stoneFaceTexture.offset.set(0.1, 0);
 
         const stoneFaceMaterial = new THREE.MeshStandardMaterial({
@@ -165,7 +163,7 @@ export class GameView {
         stonePartsTexture.wrapS = THREE.RepeatWrapping;
         stonePartsTexture.wrapT = THREE.RepeatWrapping;
         stonePartsTexture.magFilter = THREE.NearestFilter;
-        stonePartsTexture.repeat.set(5, 5); // Assuming the top is 10x10 and looks decent with 5x5 repeating
+        stonePartsTexture.repeat.set(5, 5); 
 
         const stonePartsMaterial = new THREE.MeshStandardMaterial({
             map: stonePartsTexture,
@@ -173,7 +171,6 @@ export class GameView {
             metalness: 0.0
         });
 
-        // The BoxGeometry takes 6 materials: [+X, -X, +Y, -Y, +Z (Front), -Z (Back)]
         const pusherMaterials = [
             stonePartsMaterial, // Right
             stonePartsMaterial, // Left
@@ -225,8 +222,6 @@ export class GameView {
         const rightWallGroup = createBlockStructure(1, 4, 12, wallMaterial, new THREE.Vector3(5.5, 2, 1));
         this.scene.add(rightWallGroup);
 
-        // Instead of a grid of tiny blocks, the pusher is a single massive block 
-        // to allow the texture to display big Thwomp faces correctly.
         const pusherGeo = new THREE.BoxGeometry(10, 1, 10);
         this.pusherMesh = new THREE.Mesh(pusherGeo, pusherMaterials);
         this.pusherMesh.position.set(0, 0.45, -4);
@@ -241,9 +236,90 @@ export class GameView {
         sweeperMesh.receiveShadow = true;
         this.scene.add(sweeperMesh);
 
+        // Cargamos todos los modelos 3D
         this.loadMarioModels();
         this.loadDancingKongModel();
+        
+        // ¡Cargamos los nuevos Thwomps para el empujador!
+        this.loadThwompPusher();
     }
+
+    // --- NUEVA FUNCIÓN PARA AÑADIR LAS ROCAS THWOMP ---
+    loadThwompPusher() {
+        // Usamos el cargador MTL para leer tu thwomp.mtl
+        const mtlLoader = new MTLLoader();
+        mtlLoader.setPath('assets/images/');
+        
+        mtlLoader.load('thwomp.mtl', (materials) => {
+            materials.preload();
+
+            // Usamos el cargador OBJ y le conectamos el MTL que acabamos de cargar
+            const objLoader = new OBJLoader();
+            objLoader.setMaterials(materials);
+            objLoader.setPath('assets/images/');
+            
+            objLoader.load('thwomp.obj', (object) => {
+
+                // Ajuste de escala automático
+                const box = new THREE.Box3().setFromObject(object);
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scale = 2.0 / maxDim; 
+                object.scale.set(scale, scale, scale);
+
+                const numThwomps = 5; 
+                const pusherWidth = 10;
+                const spacing = pusherWidth / numThwomps;
+                const startX = -(pusherWidth / 2) + (spacing / 2);
+
+                for (let i = 0; i < numThwomps; i++) {
+                    const thwomp = object.clone();
+                    
+                    thwomp.position.set(startX + (i * spacing), 0, 5); 
+                    
+                    // thwomp.rotation.y = Math.PI; 
+
+                    thwomp.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                            
+                            // --- CÓDIGO DE RESCATE PARA EL MTL ---
+                            // Si el MTL se cargó pero dejó piezas en negro puro, lo repintamos
+                            if (child.material) {
+                                // Si el modelo tiene varias partes separadas
+                                if (Array.isArray(child.material)) {
+                                    child.material.forEach(mat => {
+                                        // Si el color es negro (0x000000), le damos color piedra
+                                        if (mat.color.getHex() === 0x000000) mat.color.setHex(0x7a7a7a);
+                                    });
+                                } else {
+                                    // Si es una sola pieza sólida
+                                    if (child.material.color.getHex() === 0x000000) {
+                                        child.material.color.setHex(0x7a7a7a);
+                                    }
+                                }
+                            }
+                            // -------------------------------------
+                        }
+                    });
+
+                    if (this.pusherMesh) {
+                        this.pusherMesh.add(thwomp);
+                    }
+                }
+
+                console.log("Rocas Thwomp cargadas usando el archivo .mtl");
+
+            }, undefined, (error) => {
+                console.error('Error al cargar thwomp.obj:', error);
+            });
+        }, undefined, (error) => {
+            console.error('Error al cargar thwomp.mtl:', error);
+        });
+    }
+    // --------------------------------------------------
+
     loadMarioModels() {
         const mtlLoader = new MTLLoader();
         mtlLoader.setPath('assets/images/Mario/');
@@ -300,17 +376,14 @@ export class GameView {
         gltfLoader.load('assets/images/donkey_kong_dancing.glb', (gltf) => {
             const dancingKong = gltf.scene;
 
-            // Some GLTF models with animations have huge un-normalized bounds or bones.
-            // Ignore the bounding box and force a manual scale.
-            const scale = 1.8; // Increased to make him bigger in the center
+            const scale = 1.8; 
             dancingKong.scale.set(scale, scale, scale);
 
-            // Hardcode offsets so he touches the floor and is moved far forward
             const yOffset = 2.9;
             const zOffset = -1.7;
 
             dancingKong.position.set(0, yOffset, zOffset);
-            dancingKong.rotation.set(0, 0, 0); // Face straight forward
+            dancingKong.rotation.set(0, 0, 0); 
 
             dancingKong.traverse((child) => {
                 if (child.isMesh) {
@@ -321,10 +394,8 @@ export class GameView {
 
             this.scene.add(dancingKong);
 
-            // Setup animation
             if (gltf.animations && gltf.animations.length > 0) {
                 const mixer = new THREE.AnimationMixer(dancingKong);
-                // Play the first animation (dancing)
                 const action = mixer.clipAction(gltf.animations[0]);
                 action.play();
                 this.mixers.push(mixer);
@@ -337,24 +408,17 @@ export class GameView {
     }
 
     createBarrelMesh(position, quaternion) {
-        // Create the primitive cylinder geometry matching physics
         const geometry = new THREE.CylinderGeometry(0.9, 0.9, 4.0, 16);
-        geometry.rotateZ(Math.PI / 2); // Rotate mesh to be horizontal along X axis
+        geometry.rotateZ(Math.PI / 2); 
 
-        // Load the texture dynamically and apply it to a basic material
         const textureLoader = new THREE.TextureLoader();
         const texture = textureLoader.load('assets/images/barril/skbarrelTex0.png');
-        // Wrapping and repeating to crop out the left half (the lid) and only show wooden planks
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
 
-        // The texture has the lid on the top half (V=0.5 to 1.0) and planks on the bottom half (V=0.0 to 0.5)
-        // We crop out the top half entirely so the side of the cylinder only shows planks.
         texture.repeat.set(1, 0.5);
-        // Start reading from the bottom (V=0.0)
         texture.offset.set(0, 0);
 
-        // The face of the cylinder gets the texture
         const material = new THREE.MeshStandardMaterial({
             map: texture,
             roughness: 0.8,
@@ -489,7 +553,6 @@ export class GameView {
     }
 
     createCardItemMesh(position, quaternion, imageUrl) {
-        // Modelo 3D con grosor moderado (antes 0.6, ahora bajado a 0.3)
         const geometry = new THREE.BoxGeometry(1.2, 0.3, 1.8);
         const texture = this.createCardTexture(imageUrl);
 
@@ -537,7 +600,6 @@ export class GameView {
     }
 
     render(deltaTime = 0) {
-        // Update all animation mixers
         for (const mixer of this.mixers) {
             mixer.update(deltaTime);
         }
