@@ -22,8 +22,8 @@ export class GameController {
             if (this.view.ui.money > 0) {
                 this.view.ui.updateMoney(-1);
                 const dropX = normalizedX * 4.5;
-
-                this.coinController.spawnCoin(dropX, 4, 1.5);
+                // Dejamos caer la moneda en z=2.0 en vez de 1.5 para evitar que roce con el nuevo muro de cristal (z=1.0)
+                this.coinController.spawnCoin(dropX, 4, 2.0);
             }
         });
 
@@ -39,7 +39,8 @@ export class GameController {
         this.physics.update(deltaTime);
 
         this.pusherTime += deltaTime * 1.5;
-        const pusherZ = -4 + Math.sin(this.pusherTime) * 2;
+        // Ajuste para evitar que se esconda del todo la cara del Thwomp
+        const pusherZ = -3.5 + Math.sin(this.pusherTime) * 1.5;
 
         this.physics.setPusherPosition(pusherZ);
         this.view.updatePusherPosition(pusherZ);
@@ -78,16 +79,10 @@ export class GameController {
             item.mesh.position.copy(item.body.position);
             item.mesh.quaternion.copy(item.body.quaternion);
 
-            // --- FÍSICA INTELIGENTE EN 2 FASES ---
-            // Solo aplicamos la "gravedad magnética" cuando el barril 
-            // ya ha volado sobre el escalón y está a punto de tocar las monedas (y < 1.0)
             if (item.body.position.y < 1.0) {
-                // Fuerzas aplicadas exactamente en el centro de masa del barril (0,0,0)
-                // -800 para pegarlo al suelo, +2000 en Z para empujarlo como una máquina barredora con su nuevo peso
                 const fuerzaSuelo = new CANNON.Vec3(0, -800, 2000);
                 item.body.applyForce(fuerzaSuelo, new CANNON.Vec3(0, 0, 0));
             }
-            // --------------------------------------
 
             if (item.body.position.y < -5) {
                 this.physics.world.removeBody(item.body);
@@ -100,7 +95,8 @@ export class GameController {
     spawnCardItem() {
         const x = (Math.random() - 0.5) * 8;
         const y = 4;
-        const z = 1.5;
+        // Spawneamos la carta un poco más adelante (z=2.5) para que no interseque con el nuevo muro invisible del castillo (que llega hasta z=1.0)
+        const z = 2.5;
         const position = new CANNON.Vec3(x, y, z);
 
         const cardTypes = [
@@ -136,18 +132,16 @@ export class GameController {
     }
 
     spawnBarrel() {
-        // Nace más adelante para que empiece a caer ya por encima de las monedas, no sobre el escalón
         const x = 0;
-        const y = 3.5;   // Ligeramente más bajo para que no caiga de tan alto
-        const z = 1.0;   // z positivo para asegurar que nace por delante del precipicio verde
+        const y = 3.5;
+        const z = 1.0;
 
         const position = new CANNON.Vec3(x, y, z);
 
-        // Caída directa sin tanto impulso vertical 
         const velocity = new CANNON.Vec3(
             0,
-            -15,   // Fuerte impulso hacia abajo para que no vuele por encima
-            8      // Impulso horizontal moderado
+            -15,
+            8
         );
 
         const body = this.physics.createBarrel(position, velocity);

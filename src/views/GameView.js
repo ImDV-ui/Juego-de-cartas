@@ -146,7 +146,6 @@ export class GameView {
             metalness: 0.0
         });
 
-        // Materiales genéricos para la caja detrás del Thwomp
         const pusherBoxMaterial = new THREE.MeshStandardMaterial({
             color: 0x5a5a5a,
             roughness: 0.9,
@@ -201,40 +200,35 @@ export class GameView {
         this.scene.add(rightWallGroup);
 
         const pusherGeo = new THREE.BoxGeometry(10, 2, 10);
-        pusherGeo.translate(0, 0.5, 0); // Lo desplazamos hacia arriba para que mantenga su base pegada al suelo
+        pusherGeo.translate(0, 0.5, 0);
         this.pusherMesh = new THREE.Mesh(pusherGeo, pusherMaterials);
         this.pusherMesh.position.set(0, 0.45, -4);
         this.pusherMesh.receiveShadow = true;
         this.pusherMesh.castShadow = true;
         this.scene.add(this.pusherMesh);
 
-        const sweeperGeo = new THREE.BoxGeometry(10, 2, 8);
-        const sweeperMesh = new THREE.Mesh(sweeperGeo, sweeperMaterial);
-        sweeperMesh.position.set(0, 2, -4.5);
-        sweeperMesh.castShadow = true;
-        sweeperMesh.receiveShadow = true;
-        this.scene.add(sweeperMesh);
+        // Movemos el techo de la barredora visualmente hacia adelante (z = -3.0)
+        // Eliminado sweeperMesh normal para poner EL CASTILLO
+        const castleStructure = this.createCastleStructure();
+        this.scene.add(castleStructure);
 
         this.loadMarioModels();
         this.loadDancingKongModel();
 
-        // ¡Llamamos a nuestra nueva y limpia función GLB!
         this.loadThwompPusher();
     }
 
-    // --- NUEVA VERSIÓN SÚPER LIMPIA: CARGADOR DE THWOMP GLB ---
     loadThwompPusher() {
         const gltfLoader = new GLTFLoader();
 
         gltfLoader.load('assets/images/thwomp.glb', (gltf) => {
             const object = gltf.scene;
 
-            // 1. Calculamos el tamaño original y lo normalizamos a unos 2 metros de ancho
             const box = new THREE.Box3().setFromObject(object);
             const size = box.getSize(new THREE.Vector3());
             const center = box.getCenter(new THREE.Vector3());
             const maxDim = Math.max(size.x, size.y, size.z);
-            const scale = 2.0 / maxDim; // 2.0 encaja perfecto en 10 metros (5 rocas = 10m)
+            const scale = 2.0 / maxDim;
 
             const numThwomps = 5;
             const pusherWidth = 10;
@@ -245,19 +239,11 @@ export class GameView {
                 const wrapper = new THREE.Group();
                 const thwomp = object.clone();
 
-                // Centramos el punto de origen de la piedra dentro de su wrapper
                 thwomp.position.set(-center.x, -center.y, -center.z);
 
                 wrapper.add(thwomp);
-                wrapper.scale.set(scale, scale, scale);
-
-                // Z = 5 lo pone justo en la cara delantera del bloque empujador (que mide 10 de fondo)
-                wrapper.position.set(startX + (i * spacing), 0.5, 5.0);
-
-                // MUY IMPORTANTE: A veces los GLB de MagicaVoxel o Sketchfab vienen rotados.
-                // Si la cara mira hacia Kong o hacia un lado, quita las "//" de la línea de abajo 
-                // y juega con los valores (Math.PI = 180º, Math.PI/2 = 90º).
-                // thwomp.rotation.y = Math.PI; 
+                wrapper.scale.set(scale, scale * 0.98, scale);
+                wrapper.position.set(startX + (i * spacing), 0.45, 5.0);
 
                 wrapper.traverse((child) => {
                     if (child.isMesh) {
@@ -277,7 +263,6 @@ export class GameView {
             console.error('❌ Error al cargar thwomp.glb:', error);
         });
     }
-    // ------------------------------------------------------------
 
     loadMarioModels() {
         const mtlLoader = new MTLLoader();
@@ -338,8 +323,8 @@ export class GameView {
             const scale = 1.8;
             dancingKong.scale.set(scale, scale, scale);
 
-            const yOffset = 2.9;
-            const zOffset = -1.7;
+            const yOffset = 5.4; // Nivel 1 tiene y=4. Techo en y=4.5. + 0.9 = 5.4
+            const zOffset = 0.0; // En el balcón central
 
             dancingKong.position.set(0, yOffset, zOffset);
             dancingKong.rotation.set(0, 0, 0);
@@ -402,6 +387,93 @@ export class GameView {
             if (mesh.geometry) mesh.geometry.dispose();
             if (mesh.material) mesh.material.dispose();
         }
+    }
+
+    createCastleStructure() {
+        const textureLoader = new THREE.TextureLoader();
+        const brickTexture = textureLoader.load('assets/images/BlockBrick2D.png');
+        brickTexture.wrapS = THREE.RepeatWrapping;
+        brickTexture.wrapT = THREE.RepeatWrapping;
+        brickTexture.magFilter = THREE.NearestFilter;
+
+        const wallMaterial = new THREE.MeshStandardMaterial({
+            map: brickTexture,
+            roughness: 0.6,
+            metalness: 0.1
+        });
+
+        // 3 Niveles del castillo construidos matemáticamente, garantizando 
+        // número de bloques impar para almenas perfectas en las esquinas.
+        // Se ha eliminado la fila inferior (y=2) para evitar recortes con la barrera empujadora.
+        const levels = [
+            {
+                bounds: { xMin: -5, xMax: 5, zMin: -6, zMax: 0, yMin: 3, yMax: 4 },
+                isArch: (x, y, z) => (x === -3 || x === 0 || x === 3) && (y === 3) && (z === 0 || z === -1)
+            },
+            {
+                bounds: { xMin: -3, xMax: 3, zMin: -6, zMax: -2, yMin: 5, yMax: 7 },
+                isArch: (x, y, z) => (x === -1 || x === 1) && (y === 5 || y === 6) && (z === -2 || z === -3)
+            },
+            {
+                bounds: { xMin: -1, xMax: 1, zMin: -6, zMax: -4, yMin: 8, yMax: 10 },
+                isArch: (x, y, z) => (x === 0) && (y === 8 || y === 9) && (z === -4 || z === -5)
+            }
+        ];
+
+        let blocksInfo = [];
+
+        levels.forEach((level, i) => {
+            let b = level.bounds;
+            let nextB = levels[i + 1] ? levels[i + 1].bounds : null;
+
+            for (let x = b.xMin; x <= b.xMax; x++) {
+                for (let z = b.zMin; z <= b.zMax; z++) {
+
+                    for (let y = b.yMin; y <= b.yMax; y++) {
+                        if (!level.isArch(x, y, z)) {
+                            blocksInfo.push({ x, y, z });
+                        }
+                    }
+
+                    let isCovered = false;
+                    if (nextB) {
+                        if (x >= nextB.xMin && x <= nextB.xMax && z >= nextB.zMin && z <= nextB.zMax) {
+                            isCovered = true;
+                        }
+                    }
+
+                    if (!isCovered) {
+                        let isXEdge = (x === b.xMin || x === b.xMax);
+                        let isZEdge = (z === b.zMin || z === b.zMax);
+
+                        let keep = false;
+                        if (isXEdge && Math.abs(z - b.zMin) % 2 === 0) keep = true;
+                        if (isZEdge && Math.abs(x - b.xMin) % 2 === 0) keep = true;
+
+                        if (keep) {
+                            blocksInfo.push({ x, y: b.yMax + 1, z });
+                        }
+                    }
+                }
+            }
+        });
+
+        const blockGeo = new THREE.BoxGeometry(1, 1, 1);
+        const instancedMesh = new THREE.InstancedMesh(blockGeo, wallMaterial, blocksInfo.length);
+        instancedMesh.castShadow = true;
+        instancedMesh.receiveShadow = true;
+
+        const dummy = new THREE.Object3D();
+        blocksInfo.forEach((pos, idx) => {
+            // Desplazamos Y en -0.5 para que apoye rasante con el suelo y el fondo físico.
+            // Desplazamos Z en +0.5 para que la cara frontal (Z=0) caiga en Z=1 visual perfecto.
+            dummy.position.set(pos.x, pos.y - 0.5, pos.z + 0.5);
+            dummy.updateMatrix();
+            instancedMesh.setMatrixAt(idx, dummy.matrix);
+        });
+
+        instancedMesh.instanceMatrix.needsUpdate = true;
+        return instancedMesh;
     }
 
     createProceduralGrassTexture() {
