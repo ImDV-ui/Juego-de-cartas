@@ -21,6 +21,8 @@ export class GameView {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.2;
         this.container.appendChild(this.renderer.domElement);
 
         this.pusherMesh = null;
@@ -110,11 +112,13 @@ export class GameView {
     }
 
     setupLights() {
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        // Reducir la luz ambiental para sombras más profundas (más contraste)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
         this.scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.1);
-        directionalLight.position.set(3, 15, 8);
+        // Aumentar la luz direccional para luces más brillantes
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.6);
+        directionalLight.position.set(0, 15, 8); // Centrado en X para sombras simétricas
         directionalLight.castShadow = true;
         directionalLight.shadow.mapSize.width = 2048;
         directionalLight.shadow.mapSize.height = 2048;
@@ -248,7 +252,7 @@ export class GameView {
                 wrapper.traverse((child) => {
                     if (child.isMesh) {
                         child.castShadow = true;
-                        child.receiveShadow = true;
+                        child.receiveShadow = false; // No reciben sombras para que todas tengan el mismo color claro
                     }
                 });
 
