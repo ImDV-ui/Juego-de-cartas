@@ -574,12 +574,18 @@ export class GameView {
             if (aspectImg > aspectCanvas) {
                 drawHeight = canvas.height;
                 drawWidth = drawHeight * aspectImg;
-                offsetX = -(drawWidth - canvas.width) / 2;
             } else {
                 drawWidth = canvas.width;
                 drawHeight = drawWidth / aspectImg;
-                offsetY = -(drawHeight - canvas.height) / 2;
             }
+
+            // Hacemos un zoom para recortar el borde blanco nativo de la imagen
+            const zoom = 1.15;
+            drawWidth *= zoom;
+            drawHeight *= zoom;
+
+            offsetX = -(drawWidth - canvas.width) / 2;
+            offsetY = -(drawHeight - canvas.height) / 2;
 
             ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
             texture.needsUpdate = true;
@@ -589,7 +595,7 @@ export class GameView {
     }
 
     createCardItemMesh(position, quaternion, imageUrl) {
-        const geometry = new THREE.BoxGeometry(1.2, 0.3, 1.8);
+        const geometry = new THREE.BoxGeometry(1.2, 0.16, 1.8);
         const texture = this.createCardTexture(imageUrl);
 
         texture.center.set(0.5, 0.5);

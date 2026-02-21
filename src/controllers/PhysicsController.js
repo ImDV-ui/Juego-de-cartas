@@ -100,7 +100,7 @@ export class PhysicsController {
     }
 
     createCardItem(position) {
-        const shape = new CANNON.Box(new CANNON.Vec3(0.6, 0.15, 0.9));
+        const shape = new CANNON.Box(new CANNON.Vec3(0.6, 0.08, 0.9));
         const body = new CANNON.Body({
             mass: 1.5,
             material: this.materials.coin,
