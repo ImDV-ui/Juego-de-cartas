@@ -327,7 +327,8 @@ export class GameView {
             const zOffset = 0.6; // Slightly forward towards the edge
 
             dancingKong.position.set(0, yOffset, zOffset);
-            dancingKong.rotation.set(0, 0, 0);
+            // Ajustar la rotación en el eje X para que mire hacia el frente y no hacia abajo
+            dancingKong.rotation.set(-Math.PI / 6, 0, 0);
 
             dancingKong.traverse((child) => {
                 if (child.isMesh) {
