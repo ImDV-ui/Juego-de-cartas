@@ -327,7 +327,7 @@ export class GameView {
             const scale = 1.3;
             dancingKong.scale.set(scale, scale, scale);
 
-            const yOffset = 4.8; // Adjust to stand on the castle better
+            const yOffset = 4.2; // Adjust to stand on the castle better
             const zOffset = 0.6; // Slightly forward towards the edge
 
             dancingKong.position.set(0, yOffset, zOffset);
