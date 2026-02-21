@@ -283,7 +283,7 @@ export class GameView {
                 object.scale.set(scale, scale, scale);
 
                 const marioLeft = object.clone();
-                marioLeft.position.set(-5.5, 4, 1);
+                marioLeft.position.set(-5.5, 4, 3.5);
                 marioLeft.rotation.y = Math.PI / 2;
 
                 marioLeft.traverse((child) => {
@@ -296,7 +296,7 @@ export class GameView {
                 this.scene.add(marioLeft);
 
                 const marioRight = object.clone();
-                marioRight.position.set(5.5, 4, 1);
+                marioRight.position.set(5.5, 4, 3.5);
                 marioRight.rotation.y = -Math.PI / 2;
 
                 marioRight.traverse((child) => {
@@ -320,11 +320,11 @@ export class GameView {
         gltfLoader.load('assets/images/donkey_kong_dancing.glb', (gltf) => {
             const dancingKong = gltf.scene;
 
-            const scale = 1.8;
+            const scale = 1.3;
             dancingKong.scale.set(scale, scale, scale);
 
-            const yOffset = 5.4; // Nivel 1 tiene y=4. Techo en y=4.5. + 0.9 = 5.4
-            const zOffset = 0.0; // En el balcón central
+            const yOffset = 4.8; // Adjust to stand on the castle better
+            const zOffset = 0.6; // Slightly forward towards the edge
 
             dancingKong.position.set(0, yOffset, zOffset);
             dancingKong.rotation.set(0, 0, 0);
