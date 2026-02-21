@@ -23,7 +23,8 @@ export class GameController {
                 this.view.ui.updateMoney(-1);
                 const dropX = normalizedX * 4.5;
                 // Dejamos caer la moneda en z=2.0 en vez de 1.5 para evitar que roce con el nuevo muro de cristal (z=1.0)
-                this.coinController.spawnCoin(dropX, 4, 2.0);
+                const type = this.coinController.getRandomCoinType();
+                this.coinController.spawnCoin(dropX, 4, 2.0, type);
             }
         });
 

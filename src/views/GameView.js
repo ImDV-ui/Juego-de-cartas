@@ -43,14 +43,33 @@ export class GameView {
         this.createCabinet();
 
         this.loader = new ColladaLoader();
-        this.coinModelTemplate = new THREE.Group();
+        this.coinModelTemplates = { yellow: null, blue: null, red: null };
 
-        this.loader.load('assets/images/coin.dae', (collada) => {
+        this.loadCoinModel('assets/images/coins/coin.dae', 'yellow',
+            new THREE.Color(255 / 255, 255 / 255, 20 / 255),
+            new THREE.Color(173 / 255, 137 / 255, 16 / 255),
+            1.2
+        );
+        this.loadCoinModel('assets/images/coins/coin_blue.dae', 'blue',
+            new THREE.Color(16 / 255, 89 / 255, 255 / 255),
+            new THREE.Color(20 / 255, 20 / 255, 141 / 255),
+            1.2
+        );
+        this.loadCoinModel('assets/images/coins/coin_red.dae', 'red',
+            new THREE.Color(255 / 255, 20 / 255, 72 / 255),
+            new THREE.Color(173 / 255, 16 / 255, 16 / 255),
+            1.2
+        );
+    }
+
+    loadCoinModel(path, type, mainColor, emissiveColor, targetScale) {
+        this.loader.load(path, (collada) => {
             const model = collada.scene;
+            const template = new THREE.Group();
 
-            const shinyGoldMaterial = new THREE.MeshStandardMaterial({
-                color: new THREE.Color(255 / 255, 255 / 255, 20 / 255),
-                emissive: new THREE.Color(173 / 255, 137 / 255, 16 / 255),
+            const shinyMaterial = new THREE.MeshStandardMaterial({
+                color: mainColor,
+                emissive: emissiveColor,
                 emissiveIntensity: 0.4,
                 metalness: 0.8,
                 roughness: 0.2,
@@ -62,7 +81,7 @@ export class GameView {
                     const cleanGeom = child.geometry.clone();
                     cleanGeom.computeVertexNormals();
 
-                    const mesh = new THREE.Mesh(cleanGeom, shinyGoldMaterial);
+                    const mesh = new THREE.Mesh(cleanGeom, shinyMaterial);
                     mesh.castShadow = true;
                     mesh.receiveShadow = true;
 
@@ -70,7 +89,7 @@ export class GameView {
                     mesh.quaternion.copy(child.quaternion);
                     mesh.scale.copy(child.scale);
 
-                    this.coinModelTemplate.add(mesh);
+                    template.add(mesh);
 
                     const edges = new THREE.EdgesGeometry(cleanGeom, 15);
                     const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }));
@@ -79,31 +98,35 @@ export class GameView {
                     line.quaternion.copy(child.quaternion);
                     line.scale.copy(child.scale);
 
-                    this.coinModelTemplate.add(line);
+                    template.add(line);
                 }
             });
 
-            const box = new THREE.Box3().setFromObject(this.coinModelTemplate);
+            const box = new THREE.Box3().setFromObject(template);
             const center = box.getCenter(new THREE.Vector3());
             const size = box.getSize(new THREE.Vector3());
 
-            this.coinModelTemplate.children.forEach(child => {
+            template.children.forEach(child => {
                 child.position.sub(center);
             });
 
             const maxDimension = Math.max(size.x, size.y, size.z);
-            const exactScale = 1.2 / maxDimension;
+            const exactScale = targetScale / maxDimension;
 
-            this.coinModelTemplate.scale.set(exactScale, exactScale, exactScale);
-            this.coinModelTemplate.rotation.set(0, 0, 0);
+            template.scale.set(exactScale, exactScale, exactScale);
+            template.rotation.set(0, 0, 0);
 
-            this.pendingCoins.forEach(group => {
-                group.clear();
-                group.add(this.coinModelTemplate.clone());
+            this.coinModelTemplates[type] = template;
+
+            this.pendingCoins.forEach(pending => {
+                if (pending.type === type) {
+                    pending.group.clear();
+                    pending.group.add(template.clone());
+                }
             });
-            this.pendingCoins = [];
+            this.pendingCoins = this.pendingCoins.filter(p => p.type !== type);
 
-            console.log("Moneda renderizada con luz e iluminación correcta.");
+            console.log(`Moneda ${type} renderizada con luz e iluminación correcta.`);
         });
 
         this.mixers = [];
@@ -521,20 +544,20 @@ export class GameView {
         return texture;
     }
 
-    createCoinMesh(position, quaternion) {
+    createCoinMesh(position, quaternion, type = 'yellow') {
         const group = new THREE.Group();
         group.position.copy(position);
         group.quaternion.copy(quaternion);
 
-        if (this.coinModelTemplate && this.coinModelTemplate.children.length > 0) {
-            group.add(this.coinModelTemplate.clone());
+        if (this.coinModelTemplates[type] && this.coinModelTemplates[type].children.length > 0) {
+            group.add(this.coinModelTemplates[type].clone());
         } else {
             const fallbackMesh = new THREE.Mesh(this.coinGeometry, this.coinMaterial);
             fallbackMesh.castShadow = true;
             fallbackMesh.receiveShadow = true;
             group.add(fallbackMesh);
 
-            this.pendingCoins.push(group);
+            this.pendingCoins.push({ group, type });
         }
 
         this.scene.add(group);
@@ -558,37 +581,76 @@ export class GameView {
         const img = new Image();
         img.src = imageUrl;
 
+        const borderImg = new Image();
+        borderImg.src = 'assets/images/lado.png';
+
         const texture = new THREE.CanvasTexture(canvas);
         texture.colorSpace = THREE.SRGBColorSpace;
         texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
 
-        img.onload = () => {
-            const aspectCanvas = canvas.width / canvas.height;
+        let imgLoaded = false;
+        let borderLoaded = false;
+
+        const drawFinal = () => {
+            if (!imgLoaded || !borderLoaded) return;
+
+            const borderThickness = 30; // Grosor del borde en píxeles
+
+            const innerWidth = canvas.width - (borderThickness * 2);
+            const innerHeight = canvas.height - (borderThickness * 2);
+
+            const aspectInner = innerWidth / innerHeight;
             const aspectImg = img.width / img.height;
 
-            let drawWidth = canvas.width;
-            let drawHeight = canvas.height;
-            let offsetX = 0;
-            let offsetY = 0;
+            let drawWidth = innerWidth;
+            let drawHeight = innerHeight;
+            let offsetX = borderThickness;
+            let offsetY = borderThickness;
 
-            if (aspectImg > aspectCanvas) {
-                drawHeight = canvas.height;
+            if (aspectImg > aspectInner) {
+                drawHeight = innerHeight;
                 drawWidth = drawHeight * aspectImg;
             } else {
-                drawWidth = canvas.width;
+                drawWidth = innerWidth;
                 drawHeight = drawWidth / aspectImg;
             }
 
-            // Hacemos un zoom para recortar el borde blanco nativo de la imagen
+            // Hacemos un zoom para recortar el borde blanco nativo de la imagen original
             const zoom = 1.15;
             drawWidth *= zoom;
             drawHeight *= zoom;
 
-            offsetX = -(drawWidth - canvas.width) / 2;
-            offsetY = -(drawHeight - canvas.height) / 2;
+            offsetX = borderThickness - (drawWidth - innerWidth) / 2;
+            offsetY = borderThickness - (drawHeight - innerHeight) / 2;
 
+            // Dibujar el fondo primero (para las esquinas o huecos)
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Dibujar la imagen de la carta en el área interior
             ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+
+            // Dibujar los bordes encima (solo en las franjas exteriores) para enmarcar limpiamente las imperfecciones del zoom
+            // Top border
+            ctx.drawImage(borderImg, 0, 0, canvas.width, borderThickness);
+            // Bottom border
+            ctx.drawImage(borderImg, 0, canvas.height - borderThickness, canvas.width, borderThickness);
+            // Left border
+            ctx.drawImage(borderImg, 0, 0, borderThickness, canvas.height);
+            // Right border
+            ctx.drawImage(borderImg, canvas.width - borderThickness, 0, borderThickness, canvas.height);
+
             texture.needsUpdate = true;
+        };
+
+        img.onload = () => {
+            imgLoaded = true;
+            drawFinal();
+        };
+
+        borderImg.onload = () => {
+            borderLoaded = true;
+            drawFinal();
         };
 
         return texture;
@@ -606,8 +668,11 @@ export class GameView {
             metalness: 0.1
         });
 
+        const edgeTexture = new THREE.TextureLoader().load('assets/images/lado.png');
+        edgeTexture.colorSpace = THREE.SRGBColorSpace;
+
         const edgeMaterial = new THREE.MeshStandardMaterial({
-            color: 0xfdf6e3,
+            map: edgeTexture,
             roughness: 0.8,
             metalness: 0.1
         });

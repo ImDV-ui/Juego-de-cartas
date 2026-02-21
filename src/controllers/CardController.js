@@ -189,10 +189,12 @@ export class CardController {
             if (this.gameController && this.gameController.coinController) {
                 for (let i = 0; i < 30; i++) {
                     setTimeout(() => {
+                        const type = this.gameController.coinController.getRandomCoinType();
                         this.gameController.coinController.spawnCoin(
                             (Math.random() - 0.5) * 8,
                             4 + Math.random() * 5,
-                            1 + Math.random() * 3
+                            1 + Math.random() * 3,
+                            type
                         );
                     }, i * 100);
                 }
@@ -222,10 +224,12 @@ export class CardController {
             if (this.gameController && this.gameController.coinController) {
                 for (let i = 0; i < 10; i++) {
                     setTimeout(() => {
+                        const type = this.gameController.coinController.getRandomCoinType();
                         this.gameController.coinController.spawnCoin(
                             (Math.random() - 0.5) * 4,
                             4,
-                            1 + Math.random() * 2
+                            1 + Math.random() * 2,
+                            type
                         );
                     }, i * 200);
                 }
