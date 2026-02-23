@@ -135,13 +135,13 @@ export class GameView {
     }
 
     setupLights() {
-        
+
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
         this.scene.add(ambientLight);
 
-        
+
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1.6);
-        directionalLight.position.set(0, 15, 8); 
+        directionalLight.position.set(0, 15, 8);
         directionalLight.castShadow = true;
         directionalLight.shadow.mapSize.width = 2048;
         directionalLight.shadow.mapSize.height = 2048;
@@ -234,8 +234,8 @@ export class GameView {
         this.pusherMesh.castShadow = true;
         this.scene.add(this.pusherMesh);
 
-        
-        
+
+
         const castleStructure = this.createCastleStructure();
         this.scene.add(castleStructure);
 
@@ -243,6 +243,50 @@ export class GameView {
         this.loadDancingKongModel();
 
         this.loadThwompPusher();
+        this.loadBarrelModel();
+    }
+
+    loadBarrelModel() {
+        const gltfLoader = new GLTFLoader();
+        gltfLoader.load('assets/images/donkey_kong_barrel.glb', (gltf) => {
+            const object = gltf.scene;
+            const box = new THREE.Box3().setFromObject(object);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+
+            object.position.set(-center.x, -center.y, -center.z);
+
+            const wrapper = new THREE.Group();
+            wrapper.add(object);
+
+            const maxDim = Math.max(size.x, size.z);
+            const uniformScale = 1.8 / maxDim;
+
+            wrapper.scale.set(uniformScale, uniformScale, uniformScale);
+            wrapper.rotation.z = Math.PI / 2;
+
+            const finalWrapper = new THREE.Group();
+            finalWrapper.add(wrapper);
+
+            finalWrapper.traverse((child) => {
+                if (child.isMesh || child.isSkinnedMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            this.barrelTemplate = finalWrapper;
+
+            if (this.pendingBarrels) {
+                this.pendingBarrels.forEach(group => {
+                    group.add(this.barrelTemplate.clone());
+                });
+                this.pendingBarrels = [];
+            }
+            console.log("✅ Donkey Kong barrel cargado.");
+        }, undefined, (error) => {
+            console.error('❌ Error cargando donkey_kong_barrel.glb:', error);
+        });
     }
 
     loadThwompPusher() {
@@ -275,7 +319,7 @@ export class GameView {
                 wrapper.traverse((child) => {
                     if (child.isMesh) {
                         child.castShadow = true;
-                        child.receiveShadow = false; 
+                        child.receiveShadow = false;
                     }
                 });
 
@@ -344,23 +388,99 @@ export class GameView {
     loadDancingKongModel() {
         const gltfLoader = new GLTFLoader();
 
-        gltfLoader.load('assets/images/donkey_kong_dancing.glb', (gltf) => {
+        gltfLoader.load('assets/images/animated_donkey_kong_original.glb', (gltf) => {
             const dancingKong = gltf.scene;
 
-            const scale = 1.3;
+            const box = new THREE.Box3().setFromObject(dancingKong);
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const scale = 2.8 / maxDim;
+
             dancingKong.scale.set(scale, scale, scale);
 
-            const yOffset = 4.2; 
-            const zOffset = 0.6; 
+            const yOffset = 5.6;
+            const zOffset = 0.5;
 
             dancingKong.position.set(0, yOffset, zOffset);
-            
-            dancingKong.rotation.set(-Math.PI / 6, 0, 0);
+
+            dancingKong.rotation.set(-Math.PI / 12, 0, 0);
+
+            this.dancingKong = dancingKong;
 
             dancingKong.traverse((child) => {
                 if (child.isMesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
+                    const targetPink = new THREE.Color(0xf46b78);
+                    if (child.material && child.material.map && child.material.map.image) {
+                        try {
+                            const map = child.material.map;
+                            const image = map.image;
+                            if (image.width && image.height) {
+                                const canvas = document.createElement('canvas');
+                                canvas.width = image.width;
+                                canvas.height = image.height;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(image, 0, 0);
+                                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                                const data = imgData.data;
+                                for (let i = 0; i < data.length; i += 4) {
+                                    const r = data[i], g = data[i + 1], b = data[i + 2];
+                                    if (r > g && g >= b && r < 200 && (r - b) > 15) {
+                                        const brightness = (r + g + b) / 3;
+                                        const scale = (brightness / 70) * 1.25;
+                                        data[i] = Math.min(255, 244 * scale);
+                                        data[i + 1] = Math.min(255, 107 * scale);
+                                        data[i + 2] = Math.min(255, 120 * scale);
+                                    }
+                                }
+                                ctx.putImageData(imgData, 0, 0);
+                                const newTex = new THREE.CanvasTexture(canvas);
+                                newTex.magFilter = THREE.NearestFilter;
+                                newTex.minFilter = THREE.NearestFilter;
+                                newTex.flipY = map.flipY;
+                                if (map.colorSpace) newTex.colorSpace = map.colorSpace;
+                                if (map.encoding) newTex.encoding = map.encoding;
+
+                                child.material = child.material.clone();
+                                child.material.map = newTex;
+                                child.material.color.setHex(0xffffff);
+                                child.material.needsUpdate = true;
+                            }
+                        } catch (e) {
+                            console.warn("Could not recolor map:", e);
+                        }
+                    } else if (child.geometry && child.geometry.attributes.color) {
+                        const colors = child.geometry.attributes.color.array;
+                        const itemSize = child.geometry.attributes.color.itemSize;
+                        for (let i = 0; i < colors.length; i += itemSize) {
+                            const r = colors[i], g = colors[i + 1], b = colors[i + 2];
+                            if (r > g && g >= b && r < 0.78 && (r - b) > 0.05) {
+                                const brightness = (r + g + b) / 3;
+                                const scale = (brightness / 0.27) * 1.25;
+                                colors[i] = Math.min(1.0, targetPink.r * scale);
+                                colors[i + 1] = Math.min(1.0, targetPink.g * scale);
+                                colors[i + 2] = Math.min(1.0, targetPink.b * scale);
+                            }
+                        }
+                        child.geometry.attributes.color.needsUpdate = true;
+                        if (child.material) {
+                            child.material = child.material.clone();
+                            child.material.color.setHex(0xffffff);
+                        }
+                    } else if (child.material && child.material.color) {
+                        const c = child.material.color;
+                        if (c.r > c.g && c.g >= c.b && c.r < 0.78 && (c.r - c.b) > 0.05) {
+                            child.material = child.material.clone();
+                            const brightness = (c.r + c.g + c.b) / 3;
+                            const scale = (brightness / 0.27) * 1.25;
+                            child.material.color.setRGB(
+                                Math.min(1.0, targetPink.r * scale),
+                                Math.min(1.0, targetPink.g * scale),
+                                Math.min(1.0, targetPink.b * scale)
+                            );
+                        }
+                    }
                 }
             });
 
@@ -369,70 +489,87 @@ export class GameView {
             if (gltf.animations && gltf.animations.length > 0) {
                 const mixer = new THREE.AnimationMixer(dancingKong);
                 const action = mixer.clipAction(gltf.animations[0]);
-                action.play();
+                action.loop = THREE.LoopOnce;
+                action.clampWhenFinished = true;
+
+                mixer.addEventListener('finished', (e) => {
+                    this.dancingKong.rotation.set(-Math.PI / 12, 0, 0);
+                });
+
+                this.kongAction = action;
                 this.mixers.push(mixer);
             }
 
-            console.log("✅ Modelo Dancing Kong cargado y animado correctamente.");
+            console.log("✅ Modelo Kong Animado cargado.");
         }, undefined, (error) => {
-            console.error('❌ Error cargando el modelo Dancing Kong:', error);
+            console.error('❌ Error cargando el modelo Kong Animado:', error);
         });
     }
 
+    playKongAnimation() {
+        if (this.kongAction && this.dancingKong) {
+            this.dancingKong.rotation.set(-Math.PI / 12, -Math.PI / 2, 0);
+            this.kongAction.reset();
+            this.kongAction.play();
+        }
+    }
+
     createBarrelMesh(position, quaternion) {
-        const geometry = new THREE.CylinderGeometry(0.9, 0.9, 4.0, 16);
-        geometry.rotateZ(Math.PI / 2);
+        const group = new THREE.Group();
+        group.position.copy(position);
+        group.quaternion.copy(quaternion);
 
-        const textureLoader = new THREE.TextureLoader();
-        const texture = textureLoader.load('assets/images/barril/skbarrelTex0.png');
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.wrapT = THREE.RepeatWrapping;
+        if (this.barrelTemplate) {
+            group.add(this.barrelTemplate.clone());
+        } else {
+            this.pendingBarrels = this.pendingBarrels || [];
+            this.pendingBarrels.push(group);
+        }
 
-        texture.repeat.set(1, 0.5);
-        texture.offset.set(0, 0);
-
-        const material = new THREE.MeshStandardMaterial({
-            map: texture,
-            roughness: 0.8,
-            metalness: 0.1
-        });
-
-        const mesh = new THREE.Mesh(geometry, material);
-
-        mesh.position.copy(position);
-        mesh.quaternion.copy(quaternion);
-
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-
-        this.scene.add(mesh);
-        return mesh;
+        this.scene.add(group);
+        return group;
     }
 
     removeBarrelMesh(mesh) {
         if (mesh) {
             this.scene.remove(mesh);
-            if (mesh.geometry) mesh.geometry.dispose();
-            if (mesh.material) mesh.material.dispose();
         }
     }
 
     createCastleStructure() {
-        const textureLoader = new THREE.TextureLoader();
-        const brickTexture = textureLoader.load('assets/images/BlockBrick2D.png');
-        brickTexture.wrapS = THREE.RepeatWrapping;
-        brickTexture.wrapT = THREE.RepeatWrapping;
-        brickTexture.magFilter = THREE.NearestFilter;
-
         const wallMaterial = new THREE.MeshStandardMaterial({
-            map: brickTexture,
+            color: 0xffffff,
             roughness: 0.6,
             metalness: 0.1
         });
 
-        
-        
-        
+        const imageLoader = new THREE.ImageLoader();
+        imageLoader.load('assets/images/BlockBrick2D.png', (image) => {
+            const canvas = document.createElement('canvas');
+
+            const cropPixels = Math.max(1, Math.floor(image.width * 0.08));
+
+            canvas.width = image.width - (cropPixels * 2);
+            canvas.height = image.height - (cropPixels * 2);
+
+            const ctx = canvas.getContext('2d');
+
+            ctx.drawImage(
+                image,
+                cropPixels, cropPixels, canvas.width, canvas.height,
+                0, 0, canvas.width, canvas.height
+            );
+
+            const croppedTexture = new THREE.CanvasTexture(canvas);
+            croppedTexture.wrapS = THREE.RepeatWrapping;
+            croppedTexture.wrapT = THREE.RepeatWrapping;
+            croppedTexture.magFilter = THREE.NearestFilter;
+            croppedTexture.minFilter = THREE.NearestFilter;
+
+            wallMaterial.map = croppedTexture;
+            wallMaterial.needsUpdate = true;
+        });
+
         const levels = [
             {
                 bounds: { xMin: -5, xMax: 5, zMin: -6, zMax: 0, yMin: 3, yMax: 4 },
@@ -493,8 +630,8 @@ export class GameView {
 
         const dummy = new THREE.Object3D();
         blocksInfo.forEach((pos, idx) => {
-            
-            
+
+
             dummy.position.set(pos.x, pos.y - 0.5, pos.z + 0.5);
             dummy.updateMatrix();
             instancedMesh.setMatrixAt(idx, dummy.matrix);
@@ -594,7 +731,7 @@ export class GameView {
         const drawFinal = () => {
             if (!imgLoaded || !borderLoaded) return;
 
-            const borderThickness = 30; 
+            const borderThickness = 30;
 
             const innerWidth = canvas.width - (borderThickness * 2);
             const innerHeight = canvas.height - (borderThickness * 2);
@@ -615,7 +752,7 @@ export class GameView {
                 drawHeight = drawWidth / aspectImg;
             }
 
-            
+
             const zoom = 1.15;
             drawWidth *= zoom;
             drawHeight *= zoom;
@@ -623,21 +760,21 @@ export class GameView {
             offsetX = borderThickness - (drawWidth - innerWidth) / 2;
             offsetY = borderThickness - (drawHeight - innerHeight) / 2;
 
-            
+
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            
+
             ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
 
-            
-            
+
+
             ctx.drawImage(borderImg, 0, 0, canvas.width, borderThickness);
-            
+
             ctx.drawImage(borderImg, 0, canvas.height - borderThickness, canvas.width, borderThickness);
-            
+
             ctx.drawImage(borderImg, 0, 0, borderThickness, canvas.height);
-            
+
             ctx.drawImage(borderImg, canvas.width - borderThickness, 0, borderThickness, canvas.height);
 
             texture.needsUpdate = true;

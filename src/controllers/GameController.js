@@ -22,7 +22,7 @@ export class GameController {
             if (this.view.ui.money > 0) {
                 this.view.ui.updateMoney(-1);
                 const dropX = normalizedX * 4.5;
-                
+
                 const type = this.coinController.getRandomCoinType();
                 this.coinController.spawnCoin(dropX, 4, 2.0, type);
             }
@@ -40,7 +40,7 @@ export class GameController {
         this.physics.update(deltaTime);
 
         this.pusherTime += deltaTime * 1.5;
-        
+
         const pusherZ = -3.5 + Math.sin(this.pusherTime) * 1.5;
 
         this.physics.setPusherPosition(pusherZ);
@@ -96,7 +96,7 @@ export class GameController {
     spawnCardItem() {
         const x = (Math.random() - 0.5) * 8;
         const y = 4;
-        
+
         const z = 2.5;
         const position = new CANNON.Vec3(x, y, z);
 
@@ -133,22 +133,26 @@ export class GameController {
     }
 
     spawnBarrel() {
-        const x = 0;
-        const y = 3.5;
-        const z = 1.0;
+        this.view.playKongAnimation();
 
-        const position = new CANNON.Vec3(x, y, z);
+        setTimeout(() => {
+            const x = 0;
+            const y = 3.5;
+            const z = 1.0;
 
-        const velocity = new CANNON.Vec3(
-            0,
-            -15,
-            8
-        );
+            const position = new CANNON.Vec3(x, y, z);
 
-        const body = this.physics.createBarrel(position, velocity);
-        const mesh = this.view.createBarrelMesh(body.position, body.quaternion);
+            const velocity = new CANNON.Vec3(
+                0,
+                -15,
+                8
+            );
 
-        this.barrels.push({ body, mesh });
+            const body = this.physics.createBarrel(position, velocity);
+            const mesh = this.view.createBarrelMesh(body.position, body.quaternion);
+
+            this.barrels.push({ body, mesh });
+        }, 4500);
     }
 
     render(deltaTime) {
