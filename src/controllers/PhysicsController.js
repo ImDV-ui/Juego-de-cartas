@@ -59,16 +59,16 @@ export class PhysicsController {
             material: this.materials.pusher
         });
 
-        // 1. Barrera recta, plana y normal para que se apoyen las monedas.
+        
         const mainPusherShape = new CANNON.Box(new CANNON.Vec3(5, 1, 5.5));
         this.pusherBody.addShape(mainPusherShape, new CANNON.Vec3(0, 0.5, 0.5));
 
         this.pusherBody.position.set(0, 0.45, -4);
         this.world.addBody(this.pusherBody);
 
-        // 2. LA BARREDORA (Sweeper): La hacemos altísima (y=10, media altura 10 -> alto 20)
-        // para que actúe como un panel de cristal frontal infinito. Así ninguna moneda 
-        // podrá saltar por encima ni quedarse atascada en el balcón del castillo.
+        
+        
+        
         const sweeperShape = new CANNON.Box(new CANNON.Vec3(5, 10, 4));
         const sweeperBody = new CANNON.Body({ mass: 0, material: this.materials.ground });
         sweeperBody.addShape(sweeperShape);

@@ -6,7 +6,6 @@ export class CardController {
         this.view = new CardView();
         this.cards = [];
         this.draggedCard = null;
-        // Variables para guardar dónde hemos agarrado la carta exactamente
         this.dragOffsetX = 0;
         this.dragOffsetY = 0;
 
@@ -61,16 +60,11 @@ export class CardController {
         ];
 
         const randomCard = cardTypes[Math.floor(Math.random() * cardTypes.length)];
-        // Create a copy to ensure unique ID if needed, though simple logic works for now
         this.addCard({ ...randomCard, id: randomCard.id + '_' + Date.now() });
-        console.log("Random card given:", randomCard.name);
     }
 
     addCard(cardData) {
-        if (this.cards.length >= 10) {
-            console.warn("Max cards (10) reached. Cannot add more.");
-            return;
-        }
+        if (this.cards.length >= 10) return;
 
         const cardElement = this.view.createCardElement(cardData);
         const cardObj = { data: cardData, element: cardElement };
@@ -85,31 +79,26 @@ export class CardController {
         if (e.type === 'touchstart') e.preventDefault();
 
         this.draggedCard = cardObj;
-        this.originalSlot = this.draggedCard.element.parentNode; // Guardamos el slot original
+        this.originalSlot = this.draggedCard.element.parentNode;
 
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-        // 1. Obtener rect para calcular offset y guardar dimensiones
         const rect = this.draggedCard.element.getBoundingClientRect();
         this.dragOffsetX = clientX - rect.left;
         this.dragOffsetY = clientY - rect.top;
 
-        // 2. Fijar dimensiones explícitas antes de mover al body para evitar resize
         this.draggedCard.element.style.width = `${rect.width}px`;
         this.draggedCard.element.style.height = `${rect.height}px`;
 
-        // 3. Mover al body para romper el contexto de transform del contenedor
         document.body.appendChild(this.draggedCard.element);
 
-        // 4. Estilos para el arrastre
         this.draggedCard.element.style.position = 'fixed';
         this.draggedCard.element.style.zIndex = '1000';
         this.draggedCard.element.style.cursor = 'grabbing';
         this.draggedCard.element.style.transform = 'scale(1.5)';
         this.draggedCard.element.style.boxShadow = '0 10px 20px rgba(0,0,0,0.5)';
 
-        // 5. Posicionar inicialmente
         this.moveCardToInput(e);
 
         this.boundMove = (ev) => this.onDragMove(ev);
@@ -148,23 +137,19 @@ export class CardController {
 
         const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
 
-        // Zona de drop: > 25% del ancho (lado derecho)
         if (clientX > window.innerWidth * 0.25) {
             this.playCardEffect(this.draggedCard.data);
 
-            // Eliminar elemento arrastrado (que está en body)
             if (this.draggedCard.element.parentNode) {
                 this.draggedCard.element.parentNode.removeChild(this.draggedCard.element);
             }
-            // Eliminar el slot original usando la vista
+
             this.view.removeSlot(this.originalSlot);
 
             this.cards = this.cards.filter(c => c !== this.draggedCard);
         } else {
-            // Cancelar: Devolver al slot original
             this.originalSlot.appendChild(this.draggedCard.element);
 
-            // Resetear estilos
             this.draggedCard.element.style.position = 'absolute';
             this.draggedCard.element.style.left = '0';
             this.draggedCard.element.style.top = '0';
@@ -183,8 +168,6 @@ export class CardController {
     }
 
     playCardEffect(cardData) {
-        console.log("Playing Card:", cardData.name);
-
         if (cardData.type === 'COIN_SHOWER') {
             if (this.gameController && this.gameController.coinController) {
                 for (let i = 0; i < 30; i++) {
@@ -202,25 +185,20 @@ export class CardController {
         } else if (cardData.type === 'DOUBLE_MONEY') {
             if (this.gameController && this.gameController.view && this.gameController.view.ui) {
                 this.gameController.view.ui.multiplier = 2;
-                console.log("Multiplier set to x2");
                 this.gameController.view.ui.moneyElement.style.color = '#ffff00';
 
                 setTimeout(() => {
                     if (this.gameController.view.ui) {
                         this.gameController.view.ui.multiplier = 1;
                         this.gameController.view.ui.moneyElement.style.color = '#00ff00';
-                        console.log("Multiplier reset to x1");
                     }
                 }, 120000);
             }
         } else if (cardData.type === 'DONKEY_BARREL') {
-            console.log("Kong Barrel dropped!");
             if (this.gameController) {
                 this.gameController.spawnBarrel();
             }
         } else if (cardData.type === 'GIFT_CARD') {
-            console.log("Gift Card Collected!");
-            // Simple reward: Drop 10 coins
             if (this.gameController && this.gameController.coinController) {
                 for (let i = 0; i < 10; i++) {
                     setTimeout(() => {

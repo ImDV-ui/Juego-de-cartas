@@ -22,7 +22,7 @@ export class GameController {
             if (this.view.ui.money > 0) {
                 this.view.ui.updateMoney(-1);
                 const dropX = normalizedX * 4.5;
-                // Dejamos caer la moneda en z=2.0 en vez de 1.5 para evitar que roce con el nuevo muro de cristal (z=1.0)
+                
                 const type = this.coinController.getRandomCoinType();
                 this.coinController.spawnCoin(dropX, 4, 2.0, type);
             }
@@ -40,7 +40,7 @@ export class GameController {
         this.physics.update(deltaTime);
 
         this.pusherTime += deltaTime * 1.5;
-        // Ajuste para evitar que se esconda del todo la cara del Thwomp
+        
         const pusherZ = -3.5 + Math.sin(this.pusherTime) * 1.5;
 
         this.physics.setPusherPosition(pusherZ);
@@ -96,7 +96,7 @@ export class GameController {
     spawnCardItem() {
         const x = (Math.random() - 0.5) * 8;
         const y = 4;
-        // Spawneamos la carta un poco más adelante (z=2.5) para que no interseque con el nuevo muro invisible del castillo (que llega hasta z=1.0)
+        
         const z = 2.5;
         const position = new CANNON.Vec3(x, y, z);
 

@@ -26,7 +26,7 @@ export class UIView {
         this.moneyElement.style.top = '20px';
         this.moneyElement.style.right = '40px';
         this.moneyElement.style.fontSize = '32px';
-        this.moneyElement.style.color = '#ffffff'; // White color
+        this.moneyElement.style.color = '#ffffff'; 
         this.moneyElement.innerText = `MONEY: ${this.money}`;
         this.container.appendChild(this.moneyElement);
 
@@ -54,7 +54,7 @@ export class UIView {
 
 
         this.moneyElement.style.transform = 'scale(1.2)';
-        // Removed color change to prevent red blink. Keeping it white.
+        
 
         setTimeout(() => {
             this.moneyElement.style.transform = 'scale(1)';

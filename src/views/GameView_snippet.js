@@ -105,7 +105,7 @@ export class GameView {
             console.log("Moneda renderizada con luz e iluminación correcta.");
         });
 
-        this.mixers = []; // Keep track of animation mixers
+        this.mixers = []; 
 
         window.addEventListener('resize', () => this.onWindowResize(), false);
     }
@@ -189,23 +189,23 @@ export class GameView {
         const rightWallGroup = createBlockStructure(1, 4, 12, wallMaterial, new THREE.Vector3(5.5, 2, 1));
         this.scene.add(rightWallGroup);
 
-        // --- NUEVO CÓDIGO: CARGAR LA ROCA PICUDA 3D (DOSSUN) ---
-        // 1. Creamos un grupo contenedor. Este será el "pusherMesh" que moverá el GameController
+        
+        
         this.pusherMesh = new THREE.Group();
         this.pusherMesh.position.set(0, 0.45, -4);
         this.scene.add(this.pusherMesh);
 
-        // 2. Cargamos el archivo .dae real que tienes en tu carpeta
+        
         this.loader.load('assets/images/piedra/Dossun.dae', (collada) => {
             const piedraModel = collada.scene;
 
-            // Ajustamos la escala para que encaje como empujador
+            
             piedraModel.scale.set(2.5, 2.5, 2.5);
 
-            // Subimos un poco el modelo dentro de su contenedor para que no roce el suelo
+            
             piedraModel.position.set(0, 0.5, 0);
 
-            // Activamos las sombras para que la piedra se vea perfectamente integrada
+            
             piedraModel.traverse((child) => {
                 if (child.isMesh) {
                     child.castShadow = true;
@@ -213,14 +213,14 @@ export class GameView {
                 }
             });
 
-            // 3. Metemos la Roca Picuda dentro del contenedor que se está moviendo
+            
             this.pusherMesh.add(piedraModel);
 
             console.log("Roca Picuda cargada y colocada como empujador");
         }, undefined, (error) => {
             console.error("Error al cargar la Roca Picuda:", error);
         });
-        // --------------------------------------------------------
+        
 
         const sweeperGeo = new THREE.BoxGeometry(10, 2, 8);
         const sweeperMesh = new THREE.Mesh(sweeperGeo, sweeperMaterial);
@@ -289,17 +289,17 @@ export class GameView {
         gltfLoader.load('assets/images/donkey_kong_dancing.glb', (gltf) => {
             const dancingKong = gltf.scene;
 
-            // Some GLTF models with animations have huge un-normalized bounds or bones.
-            // Ignore the bounding box and force a manual scale.
-            const scale = 1.8; // Increased to make him bigger in the center
+            
+            
+            const scale = 1.8; 
             dancingKong.scale.set(scale, scale, scale);
 
-            // Hardcode offsets so he touches the floor and is moved far forward
+            
             const yOffset = 2.9;
             const zOffset = -1.7;
 
             dancingKong.position.set(0, yOffset, zOffset);
-            dancingKong.rotation.set(0, 0, 0); // Face straight forward
+            dancingKong.rotation.set(0, 0, 0); 
 
             dancingKong.traverse((child) => {
                 if (child.isMesh) {
@@ -310,10 +310,10 @@ export class GameView {
 
             this.scene.add(dancingKong);
 
-            // Setup animation
+            
             if (gltf.animations && gltf.animations.length > 0) {
                 const mixer = new THREE.AnimationMixer(dancingKong);
-                // Play the first animation (dancing)
+                
                 const action = mixer.clipAction(gltf.animations[0]);
                 action.play();
                 this.mixers.push(mixer);
@@ -326,24 +326,24 @@ export class GameView {
     }
 
     createBarrelMesh(position, quaternion) {
-        // Create the primitive cylinder geometry matching physics
+        
         const geometry = new THREE.CylinderGeometry(0.9, 0.9, 4.0, 16);
-        geometry.rotateZ(Math.PI / 2); // Rotate mesh to be horizontal along X axis
+        geometry.rotateZ(Math.PI / 2); 
 
-        // Load the texture dynamically and apply it to a basic material
+        
         const textureLoader = new THREE.TextureLoader();
         const texture = textureLoader.load('assets/images/barril/skbarrelTex0.png');
-        // Wrapping and repeating to crop out the left half (the lid) and only show wooden planks
+        
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
 
-        // The texture has the lid on the top half (V=0.5 to 1.0) and planks on the bottom half (V=0.0 to 0.5)
-        // We crop out the top half entirely so the side of the cylinder only shows planks.
+        
+        
         texture.repeat.set(1, 0.5);
-        // Start reading from the bottom (V=0.0)
+        
         texture.offset.set(0, 0);
 
-        // The face of the cylinder gets the texture
+        
         const material = new THREE.MeshStandardMaterial({
             map: texture,
             roughness: 0.8,
@@ -525,7 +525,7 @@ export class GameView {
     }
 
     render(deltaTime = 0) {
-        // Update all animation mixers
+        
         for (const mixer of this.mixers) {
             mixer.update(deltaTime);
         }

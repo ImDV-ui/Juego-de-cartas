@@ -17,7 +17,7 @@ export class CoinController {
 
     getRandomCoinType() {
         const rand = Math.random();
-        // 80% amarillas, 15% azules, 5% rojas
+        
         if (rand > 0.95) return 'red';
         if (rand > 0.8) return 'blue';
         return 'yellow';

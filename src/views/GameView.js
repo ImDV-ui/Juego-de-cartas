@@ -135,13 +135,13 @@ export class GameView {
     }
 
     setupLights() {
-        // Reducir la luz ambiental para sombras más profundas (más contraste)
+        
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
         this.scene.add(ambientLight);
 
-        // Aumentar la luz direccional para luces más brillantes
+        
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1.6);
-        directionalLight.position.set(0, 15, 8); // Centrado en X para sombras simétricas
+        directionalLight.position.set(0, 15, 8); 
         directionalLight.castShadow = true;
         directionalLight.shadow.mapSize.width = 2048;
         directionalLight.shadow.mapSize.height = 2048;
@@ -234,8 +234,8 @@ export class GameView {
         this.pusherMesh.castShadow = true;
         this.scene.add(this.pusherMesh);
 
-        // Movemos el techo de la barredora visualmente hacia adelante (z = -3.0)
-        // Eliminado sweeperMesh normal para poner EL CASTILLO
+        
+        
         const castleStructure = this.createCastleStructure();
         this.scene.add(castleStructure);
 
@@ -275,7 +275,7 @@ export class GameView {
                 wrapper.traverse((child) => {
                     if (child.isMesh) {
                         child.castShadow = true;
-                        child.receiveShadow = false; // No reciben sombras para que todas tengan el mismo color claro
+                        child.receiveShadow = false; 
                     }
                 });
 
@@ -350,11 +350,11 @@ export class GameView {
             const scale = 1.3;
             dancingKong.scale.set(scale, scale, scale);
 
-            const yOffset = 4.2; // Adjust to stand on the castle better
-            const zOffset = 0.6; // Slightly forward towards the edge
+            const yOffset = 4.2; 
+            const zOffset = 0.6; 
 
             dancingKong.position.set(0, yOffset, zOffset);
-            // Ajustar la rotación en el eje X para que mire hacia el frente y no hacia abajo
+            
             dancingKong.rotation.set(-Math.PI / 6, 0, 0);
 
             dancingKong.traverse((child) => {
@@ -430,9 +430,9 @@ export class GameView {
             metalness: 0.1
         });
 
-        // 3 Niveles del castillo construidos matemáticamente, garantizando 
-        // número de bloques impar para almenas perfectas en las esquinas.
-        // Se ha eliminado la fila inferior (y=2) para evitar recortes con la barrera empujadora.
+        
+        
+        
         const levels = [
             {
                 bounds: { xMin: -5, xMax: 5, zMin: -6, zMax: 0, yMin: 3, yMax: 4 },
@@ -493,8 +493,8 @@ export class GameView {
 
         const dummy = new THREE.Object3D();
         blocksInfo.forEach((pos, idx) => {
-            // Desplazamos Y en -0.5 para que apoye rasante con el suelo y el fondo físico.
-            // Desplazamos Z en +0.5 para que la cara frontal (Z=0) caiga en Z=1 visual perfecto.
+            
+            
             dummy.position.set(pos.x, pos.y - 0.5, pos.z + 0.5);
             dummy.updateMatrix();
             instancedMesh.setMatrixAt(idx, dummy.matrix);
@@ -594,7 +594,7 @@ export class GameView {
         const drawFinal = () => {
             if (!imgLoaded || !borderLoaded) return;
 
-            const borderThickness = 30; // Grosor del borde en píxeles
+            const borderThickness = 30; 
 
             const innerWidth = canvas.width - (borderThickness * 2);
             const innerHeight = canvas.height - (borderThickness * 2);
@@ -615,7 +615,7 @@ export class GameView {
                 drawHeight = drawWidth / aspectImg;
             }
 
-            // Hacemos un zoom para recortar el borde blanco nativo de la imagen original
+            
             const zoom = 1.15;
             drawWidth *= zoom;
             drawHeight *= zoom;
@@ -623,21 +623,21 @@ export class GameView {
             offsetX = borderThickness - (drawWidth - innerWidth) / 2;
             offsetY = borderThickness - (drawHeight - innerHeight) / 2;
 
-            // Dibujar el fondo primero (para las esquinas o huecos)
+            
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Dibujar la imagen de la carta en el área interior
+            
             ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
 
-            // Dibujar los bordes encima (solo en las franjas exteriores) para enmarcar limpiamente las imperfecciones del zoom
-            // Top border
+            
+            
             ctx.drawImage(borderImg, 0, 0, canvas.width, borderThickness);
-            // Bottom border
+            
             ctx.drawImage(borderImg, 0, canvas.height - borderThickness, canvas.width, borderThickness);
-            // Left border
+            
             ctx.drawImage(borderImg, 0, 0, borderThickness, canvas.height);
-            // Right border
+            
             ctx.drawImage(borderImg, canvas.width - borderThickness, 0, borderThickness, canvas.height);
 
             texture.needsUpdate = true;
