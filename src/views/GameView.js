@@ -152,19 +152,43 @@ export class GameView {
     createCabinet() {
         const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xc84c0c, roughness: 0.8, metalness: 0.1 });
 
-        const textureLoader = new THREE.TextureLoader();
-        const brickTexture = textureLoader.load('assets/images/BlockBrick2D.png');
-        brickTexture.wrapS = THREE.RepeatWrapping;
-        brickTexture.wrapT = THREE.RepeatWrapping;
-        brickTexture.repeat.set(1, 1);
-        brickTexture.magFilter = THREE.NearestFilter;
-
         const grassTexture = this.createProceduralGrassTexture();
 
+        // Creamos el material sin mapa inicial para aplicar el recorte de Canvas
         const wallMaterial = new THREE.MeshStandardMaterial({
-            map: brickTexture,
+            color: 0xffffff,
             roughness: 0.6,
             metalness: 0.1
+        });
+
+        // Cargamos la imagen y la recortamos con Canvas
+        const imageLoader = new THREE.ImageLoader();
+        imageLoader.load('assets/images/BlockBrick2D.png', (image) => {
+            const canvas = document.createElement('canvas');
+            
+            // Recortar un 8% de los bordes para eliminar las líneas blancas
+            const cropPixels = Math.max(1, Math.floor(image.width * 0.08));
+
+            canvas.width = image.width - (cropPixels * 2);
+            canvas.height = image.height - (cropPixels * 2);
+
+            const ctx = canvas.getContext('2d');
+
+            ctx.drawImage(
+                image,
+                cropPixels, cropPixels, canvas.width, canvas.height,
+                0, 0, canvas.width, canvas.height
+            );
+
+            const croppedTexture = new THREE.CanvasTexture(canvas);
+            croppedTexture.wrapS = THREE.RepeatWrapping;
+            croppedTexture.wrapT = THREE.RepeatWrapping;
+            croppedTexture.magFilter = THREE.NearestFilter;
+            croppedTexture.minFilter = THREE.NearestFilter;
+
+            // Asignamos la textura recortada al material
+            wallMaterial.map = croppedTexture;
+            wallMaterial.needsUpdate = true;
         });
 
         const grassMaterial = new THREE.MeshStandardMaterial({
@@ -233,8 +257,6 @@ export class GameView {
         this.pusherMesh.receiveShadow = true;
         this.pusherMesh.castShadow = true;
         this.scene.add(this.pusherMesh);
-
-
 
         const castleStructure = this.createCastleStructure();
         this.scene.add(castleStructure);
