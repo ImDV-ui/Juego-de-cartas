@@ -11,12 +11,22 @@ export class GameController {
         this.view = new GameView();
         this.physics = new PhysicsController();
         this.data = new GameData();
+        this.data.load(); // Ensure data is loaded to read upgrades and money
 
         this.coinController = new CoinController(this.physics, this.view);
         this.cardController = new CardController(this);
         this.inputController = new InputController();
 
         this.pusherTime = 0;
+        this.autoDropTimer = 0;
+
+        // Apply loaded money and multiplayer from GameData (if we were saving money, else start default)
+        this.view.ui.multiplier = 1 + this.data.saveData.upgrades.coinMultiplier;
+
+        // Sync upgrades to UI and listen for purchase
+        this.view.ui.setUpgradeData(this.data.saveData.upgrades, (upgradeKey) => {
+            this.handleUpgradePurchased(upgradeKey);
+        });
 
         this.inputController.onDrop((normalizedX) => {
             if (this.view.ui.money > 0) {
@@ -29,17 +39,45 @@ export class GameController {
         });
 
         this.cardDropTimer = 0;
-        this.nextCardDropTime = 10 + Math.random() * 110;
+        this.nextCardDropTime = this.getCardDropTime();
         this.cardItems = [];
         this.barrels = [];
 
         this.spawnCardItem();
     }
 
+    getCardDropTime() {
+        // Reducimos el tiempo y el randomizador base según el nivel de Lucky Cards
+        const luckyLevel = this.data.saveData.upgrades.luckyCards;
+        const base = Math.max(2, 10 - (luckyLevel * 0.5));
+        const variance = Math.max(20, 110 - (luckyLevel * 5));
+        return base + Math.random() * variance;
+    }
+
+    handleUpgradePurchased(upgradeKey) {
+        // Increment the level
+        this.data.saveData.upgrades[upgradeKey]++;
+
+        // Save the structural change
+        this.data.save();
+
+        // Apply immediately
+        if (upgradeKey === 'coinMultiplier') {
+            this.view.ui.multiplier = 1 + this.data.saveData.upgrades.coinMultiplier;
+        } else if (upgradeKey === 'luckyCards') {
+            // Apply new timer immediately if we want
+            if (this.cardDropTimer > this.getCardDropTime()) {
+                this.cardDropTimer = this.getCardDropTime();
+            }
+        }
+    }
+
     update(deltaTime) {
         this.physics.update(deltaTime);
 
-        this.pusherTime += deltaTime * 1.5;
+        const speedLevel = this.data.saveData.upgrades.pusherSpeed;
+        const speedMultiplier = 1.5 + (speedLevel * 0.2); // Sube 0.2 por nivel
+        this.pusherTime += deltaTime * speedMultiplier;
 
         const pusherZ = -3.5 + Math.sin(this.pusherTime) * 1.5;
 
@@ -49,10 +87,27 @@ export class GameController {
         this.coinController.update(deltaTime);
         this.cardController.update(deltaTime);
 
+        // Auto-Dropper Logic
+        const autoDropperLevel = this.data.saveData.upgrades.autoDropper;
+        if (autoDropperLevel > 0) {
+            this.autoDropTimer += deltaTime;
+            const dropInterval = Math.max(0.2, 3.0 - (autoDropperLevel * 0.2)); // Reduce el tiempo 0.2s y cap 0.2s min
+
+            if (this.autoDropTimer >= dropInterval) {
+                this.autoDropTimer = 0;
+                if (this.view.ui.money > 0) {
+                    this.view.ui.updateMoney(-1); // Subtrae 1
+                    const randX = (Math.random() - 0.5) * 8; // Random position en el rango del pusher
+                    const type = this.coinController.getRandomCoinType();
+                    this.coinController.spawnCoin(randX, 4, 2.0, type); // Z approx 2.0 like input drop
+                }
+            }
+        }
+
         this.cardDropTimer += deltaTime;
         if (this.cardDropTimer > this.nextCardDropTime) {
             this.cardDropTimer = 0;
-            this.nextCardDropTime = 10 + Math.random() * 110;
+            this.nextCardDropTime = this.getCardDropTime();
             this.spawnCardItem();
         }
 
