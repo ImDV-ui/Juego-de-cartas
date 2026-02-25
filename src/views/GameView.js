@@ -867,7 +867,6 @@ export class GameView {
         }
 
         this.renderer.render(this.scene, this.camera);
-        this.ui.render();
     }
 
     onWindowResize() {
