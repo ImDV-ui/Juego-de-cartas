@@ -154,19 +154,16 @@ export class GameView {
 
         const grassTexture = this.createProceduralGrassTexture();
 
-        // Creamos el material sin mapa inicial para aplicar el recorte de Canvas
         const wallMaterial = new THREE.MeshStandardMaterial({
             color: 0xffffff,
             roughness: 0.6,
             metalness: 0.1
         });
 
-        // Cargamos la imagen y la recortamos con Canvas
         const imageLoader = new THREE.ImageLoader();
         imageLoader.load('assets/images/BlockBrick2D.png', (image) => {
             const canvas = document.createElement('canvas');
-            
-            // Recortar un 8% de los bordes para eliminar las líneas blancas
+
             const cropPixels = Math.max(1, Math.floor(image.width * 0.08));
 
             canvas.width = image.width - (cropPixels * 2);
@@ -186,7 +183,6 @@ export class GameView {
             croppedTexture.magFilter = THREE.NearestFilter;
             croppedTexture.minFilter = THREE.NearestFilter;
 
-            // Asignamos la textura recortada al material
             wallMaterial.map = croppedTexture;
             wallMaterial.needsUpdate = true;
         });

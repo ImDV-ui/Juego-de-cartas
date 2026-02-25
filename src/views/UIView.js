@@ -3,13 +3,9 @@ export class UIView {
         this.money = 300;
         this.multiplier = 1;
 
-        // Callback for when an upgrade is successfully purchased
         this.onUpgradePurchased = null;
-
-        // Will hold the reference to current upgrade levels
         this.upgradesData = null;
 
-        // Definitions for upgrades
         this.upgradeDefs = {
             autoDropper: { name: 'AUTO-DROPPER', baseCost: 50, desc: 'Lanza monedas automáticamente.' },
             pusherSpeed: { name: 'PUSHER SPEED', baseCost: 100, desc: 'Aumenta la velocidad del empujador.' },
@@ -62,17 +58,15 @@ export class UIView {
 
         this.createShopButton();
         this.createShopModal();
-
-        this.createJackpotDisplay();
     }
 
     createShopButton() {
         this.shopButton = document.createElement('button');
         this.shopButton.innerText = 'TIENDA';
         this.shopButton.style.position = 'absolute';
-        this.shopButton.style.bottom = '20px'; // Right bottom as requested
+        this.shopButton.style.bottom = '20px';
         this.shopButton.style.right = '40px';
-        this.shopButton.style.pointerEvents = 'auto'; // Re-enable pointer events for button
+        this.shopButton.style.pointerEvents = 'auto';
         this.shopButton.style.padding = '15px 20px';
         this.shopButton.style.fontSize = '24px';
         this.shopButton.style.fontFamily = 'inherit';
@@ -108,7 +102,7 @@ export class UIView {
         this.shopModal.style.zIndex = '1000';
 
         const modalContent = document.createElement('div');
-        modalContent.style.position = 'relative'; // Required for absolute closeBtn
+        modalContent.style.position = 'relative';
         modalContent.style.backgroundColor = '#2c3e50';
         modalContent.style.border = '6px solid #f39c12';
         modalContent.style.borderRadius = '12px';
@@ -227,28 +221,16 @@ export class UIView {
 
     tryBuyUpgrade(upgradeKey, cost) {
         if (this.money >= cost) {
-            // Se resta el dinero bruto (sin bonus del multiplier)
             this.money -= cost;
             this.moneyElement.innerText = `MONEY: ${this.money}`;
 
-            // Notify controller
             if (this.onUpgradePurchased) {
                 this.onUpgradePurchased(upgradeKey);
             }
 
-            // Re-render shop item to reflect new levels and costs
             this.renderShopItems();
         }
     }
-
-    createJackpotDisplay() {
-
-    }
-
-    render() {
-
-    }
-
 
     updateMoney(amount) {
         if (amount > 0) {
@@ -257,12 +239,7 @@ export class UIView {
         this.money += amount;
         this.moneyElement.innerText = `MONEY: ${this.money}`;
 
-
-
-
-
         this.moneyElement.style.transform = 'scale(1.2)';
-
 
         setTimeout(() => {
             this.moneyElement.style.transform = 'scale(1)';
