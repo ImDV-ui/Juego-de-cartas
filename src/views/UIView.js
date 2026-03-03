@@ -4,6 +4,7 @@ export class UIView {
         this.multiplier = 1;
 
         this.onUpgradePurchased = null;
+        this.onMuteToggle = null;
         this.upgradesData = null;
 
         this.upgradeDefs = {
@@ -56,8 +57,33 @@ export class UIView {
         this.moneyElement.innerText = `MONEY: ${this.money}`;
         this.container.appendChild(this.moneyElement);
 
+        this.createMuteButton();
         this.createShopButton();
         this.createShopModal();
+    }
+
+    createMuteButton() {
+        this.muteButton = document.createElement('button');
+        this.muteButton.innerText = '🔊';
+        this.muteButton.style.position = 'absolute';
+        this.muteButton.style.top = '0px';
+        this.muteButton.style.left = '0px';
+        this.muteButton.style.pointerEvents = 'auto';
+        this.muteButton.style.fontSize = '32px';
+        this.muteButton.style.backgroundColor = 'transparent';
+        this.muteButton.style.border = 'none';
+        this.muteButton.style.cursor = 'pointer';
+        this.muteButton.style.textShadow = '2px 2px 0 #000';
+        this.muteButton.style.outline = 'none';
+
+        this.muteButton.addEventListener('click', () => {
+            if (this.onMuteToggle) {
+                const isMuted = this.onMuteToggle();
+                this.muteButton.innerText = isMuted ? '🔇' : '🔊';
+            }
+        });
+
+        this.container.appendChild(this.muteButton);
     }
 
     createShopButton() {

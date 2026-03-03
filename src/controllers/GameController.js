@@ -5,11 +5,14 @@ import { CoinController } from './CoinController.js';
 import { CardController } from './CardController.js';
 import { InputController } from './InputController.js';
 import { PhysicsController } from './PhysicsController.js';
+import { AudioController } from './AudioController.js';
+
 
 export class GameController {
     constructor() {
         this.view = new GameView();
         this.physics = new PhysicsController();
+        this.audioController = new AudioController();
         this.data = new GameData();
         this.data.load();
 
@@ -26,8 +29,15 @@ export class GameController {
             this.handleUpgradePurchased(upgradeKey);
         });
 
+        this.view.ui.onMuteToggle = () => {
+            return this.audioController.toggleMute();
+        };
+
         this.inputController.onDrop((normalizedX) => {
+            this.audioController.playBgMusic();
+
             if (this.view.ui.money > 0) {
+                this.audioController.playCoinSound();
                 this.view.ui.updateMoney(-1);
                 const dropX = normalizedX * 4.5;
 
@@ -158,7 +168,7 @@ export class GameController {
             {
                 id: 'double_money',
                 name: 'DOUBLE MONEY',
-                description: 'x2 Money for 2 mins!',
+                description: 'x2 Money for 12 secs!',
                 type: 'DOUBLE_MONEY',
                 image: 'assets/images/x2 de dinero.png'
             },

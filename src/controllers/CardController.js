@@ -20,7 +20,7 @@ export class CardController {
         this.addCard({
             id: 'double_money',
             name: 'DOUBLE MONEY',
-            description: 'x2 Money for 2 mins!',
+            description: 'x2 Money for 12 secs!',
             type: 'DOUBLE_MONEY',
             image: 'assets/images/x2 de dinero.png'
         });
@@ -46,7 +46,7 @@ export class CardController {
             {
                 id: 'double_money',
                 name: 'DOUBLE MONEY',
-                description: 'x2 Money for 2 mins!',
+                description: 'x2 Money for 12 secs!',
                 type: 'DOUBLE_MONEY',
                 image: 'assets/images/x2 de dinero.png'
             },
@@ -172,6 +172,9 @@ export class CardController {
             if (this.gameController && this.gameController.coinController) {
                 for (let i = 0; i < 30; i++) {
                     setTimeout(() => {
+                        if (this.gameController.audioController) {
+                            this.gameController.audioController.playCoinSound();
+                        }
                         const type = this.gameController.coinController.getRandomCoinType();
                         this.gameController.coinController.spawnCoin(
                             (Math.random() - 0.5) * 8,
@@ -184,15 +187,18 @@ export class CardController {
             }
         } else if (cardData.type === 'DOUBLE_MONEY') {
             if (this.gameController && this.gameController.view && this.gameController.view.ui) {
+                if (this.gameController.audioController) {
+                    this.gameController.audioController.playStarSound();
+                }
                 this.gameController.view.ui.multiplier = 2;
                 this.gameController.view.ui.moneyElement.style.color = '#ffff00';
 
                 setTimeout(() => {
                     if (this.gameController.view.ui) {
                         this.gameController.view.ui.multiplier = 1;
-                        this.gameController.view.ui.moneyElement.style.color = '#00ff00';
+                        this.gameController.view.ui.moneyElement.style.color = '#ffffff';
                     }
-                }, 120000);
+                }, 12000);
             }
         } else if (cardData.type === 'DONKEY_BARREL') {
             if (this.gameController) {
