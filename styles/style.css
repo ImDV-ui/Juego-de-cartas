@@ -5,12 +5,10 @@ body {
     padding: 0;
     overflow: hidden;
     background-color: #000;
-    /* Added background image */
     background-image: url('../assets/images/background.png');
     background-size: cover;
     background-position: center bottom;
     image-rendering: pixelated;
-    /* For crisp pixel art if applicable */
     background-repeat: no-repeat;
     color: #fff;
     font-family: 'Arial', sans-serif;
